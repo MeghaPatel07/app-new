@@ -1,0 +1,30 @@
+appId: com.weddingease.app
+name: "Auth - Login Flow"
+---
+- launchApp:
+    clearState: true
+
+# Empty form submit — should show validation
+- tapOn: "Sign In"
+- assertVisible: "Email is required"
+
+# Invalid email format
+- tapOn:
+    id: "input-email"
+- inputText: "notanemail"
+- tapOn: "Sign In"
+- assertVisible: "Enter a valid email"
+
+# Clear and enter valid credentials
+- clearText
+- tapOn:
+    id: "input-email"
+- inputText: "priya.test@weddingease.com"
+- tapOn:
+    id: "input-password"
+- inputText: "Test@1234"
+- tapOn: "Sign In"
+
+# Should navigate to Home
+- assertVisible: "Welcome"
+- assertNotVisible: "Sign In"

@@ -1,0 +1,46 @@
+appId: com.weddingease.app
+name: "Free Consultation Booking (Guest Flow)"
+---
+- launchApp:
+    clearState: true
+
+# Guest — not logged in
+# Navigate to Consult tab
+- tapOn: "Consult"
+- assertVisible: "Book My Free Session"
+
+# Tap book
+- tapOn: "Book My Free Session"
+- assertVisible: "Book a Free Consultation"
+
+# Submit empty form — validation
+- tapOn: "Continue"
+- assertVisible: "Name is required"
+
+# Fill form
+- tapOn:
+    id: "consult-name"
+- inputText: "Rahul Mehta"
+- tapOn:
+    id: "consult-phone"
+- inputText: "+919876543211"
+- tapOn:
+    id: "consult-email"
+- inputText: "rahul@test.com"
+- tapOn:
+    id: "consult-wedding-date"
+- inputText: "2026-11-20"
+- tapOn: "Groom"
+- tapOn: "Continue"
+
+# Slot picker
+- assertVisible: "Choose a Time Slot"
+- assertVisible: "Available"
+- tapOn:
+    index: 0
+    id: "time-slot"
+- tapOn: "Confirm Booking"
+
+# Confirmation screen
+- assertVisible: "Booking Confirmed"
+- assertVisible: "Rahul Mehta"

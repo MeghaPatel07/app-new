@@ -1,0 +1,45 @@
+appId: com.weddingease.app
+name: "Auth - Register Flow"
+---
+# Launch app fresh
+- launchApp:
+    clearState: true
+
+# Should land on Login screen
+- assertVisible: "Sign In"
+- assertVisible: "Create Account"
+
+# Navigate to Register
+- tapOn: "Create Account"
+- assertVisible: "Create your account"
+
+# Fill registration form
+- tapOn:
+    id: "input-name"
+- inputText: "Priya Sharma"
+
+- tapOn:
+    id: "input-email"
+- inputText: "priya.test@weddingease.com"
+
+- tapOn:
+    id: "input-phone"
+- inputText: "+919876543210"
+
+- tapOn:
+    id: "input-password"
+- inputText: "Test@1234"
+
+- tapOn:
+    id: "input-wedding-date"
+- inputText: "2026-12-15"
+
+# Select wedding role
+- tapOn: "Bride"
+
+# Submit
+- tapOn: "Create Account"
+
+# Should navigate to Home
+- assertVisible: "Welcome"
+- assertNotVisible: "Create your account"

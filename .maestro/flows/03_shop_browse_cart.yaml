@@ -1,0 +1,49 @@
+appId: com.weddingease.app
+name: "Shop - Browse and Add to Cart"
+---
+- launchApp
+
+# Navigate to Shop tab
+- tapOn: "Shop"
+- assertVisible: "Products"
+
+# Filter by category
+- tapOn: "Lehenga"
+- assertVisible: "Lehenga"
+- assertNotVisible: "Loading"
+
+# Tap first product
+- tapOn:
+    index: 0
+    id: "product-card"
+- assertVisible: "Add to Cart"
+- assertVisible: "₹"
+
+# Select size
+- tapOn:
+    index: 0
+    id: "size-option"
+
+# Select color
+- tapOn:
+    index: 0
+    id: "color-option"
+
+# Add to cart
+- tapOn: "Add to Cart"
+- assertVisible: "Added to cart"
+
+# Navigate to cart
+- tapOn: "Cart"
+- assertVisible: "Your Cart"
+- assertVisible: "1 item"
+
+# Increase quantity
+- tapOn:
+    id: "qty-increase"
+- assertVisible: "2"
+
+# Remove item
+- tapOn:
+    id: "remove-item"
+- assertVisible: "Your cart is empty"

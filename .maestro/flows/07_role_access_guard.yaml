@@ -1,0 +1,27 @@
+appId: com.weddingease.app
+name: "Role Access Guard - EaseBot locked for free users"
+---
+- launchApp
+
+# Login as free (no package) user
+- tapOn: "Sign In"
+- tapOn:
+    id: "input-email"
+- inputText: "free.user@weddingease.com"
+- tapOn:
+    id: "input-password"
+- inputText: "Test@1234"
+- tapOn: "Sign In"
+
+# EaseBot tab should show locked state
+- tapOn: "EaseBot"
+- assertVisible: "Premium Feature"
+- assertNotVisible: "Ask EaseBot"
+
+# Tap upgrade CTA
+- tapOn: "Upgrade to Premium"
+- assertVisible: "Choose Your Package"
+
+# Should NOT see Stylist Dashboard
+- assertNotVisible: "My Clients"
+- assertNotVisible: "Style Boards"

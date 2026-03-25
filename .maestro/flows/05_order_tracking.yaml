@@ -1,0 +1,28 @@
+appId: com.weddingease.app
+name: "Order Tracking - Status Timeline"
+---
+- launchApp
+
+# Navigate to orders
+- tapOn: "Profile"
+- tapOn: "My Orders"
+- assertVisible: "Orders"
+
+# If no orders yet
+- assertVisible:
+    text: "No orders yet"
+    optional: true
+
+# Tap first order if exists
+- tapOn:
+    index: 0
+    id: "order-card"
+    optional: true
+
+# Check timeline exists
+- assertVisible:
+    text: "Order Placed"
+    optional: true
+- assertVisible:
+    text: "WE-"
+    optional: true

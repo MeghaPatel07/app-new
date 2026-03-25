@@ -1,0 +1,67 @@
+appId: com.weddingease.app
+name: "Checkout - 3-Step Flow"
+---
+- launchApp
+
+# Add product to cart first
+- tapOn: "Shop"
+- tapOn:
+    index: 0
+    id: "product-card"
+- tapOn:
+    index: 0
+    id: "size-option"
+- tapOn: "Add to Cart"
+
+# Go to cart and checkout
+- tapOn: "Cart"
+- tapOn: "Proceed to Checkout"
+
+# Step 1: Address
+- assertVisible: "Delivery Address"
+- tapOn: "Continue"
+- assertVisible: "Name is required"  # Validation check
+
+- tapOn:
+    id: "address-name"
+- inputText: "Priya Sharma"
+- tapOn:
+    id: "address-phone"
+- inputText: "+919876543210"
+- tapOn:
+    id: "address-line1"
+- inputText: "123 MG Road"
+- tapOn:
+    id: "address-city"
+- inputText: "Mumbai"
+- tapOn:
+    id: "address-state"
+- inputText: "Maharashtra"
+- tapOn:
+    id: "address-pin"
+- inputText: "400001"
+- tapOn: "Continue"
+
+# Step 2: Delivery Options
+- assertVisible: "Delivery Options"
+- assertVisible: "Standard Delivery"
+- assertVisible: "Express Delivery"
+- tapOn: "Express Delivery"
+- assertVisible: "+₹499"
+- tapOn: "Delivery Insurance"
+- assertVisible: "+₹199"
+- tapOn: "Continue"
+
+# Step 3: Payment
+- assertVisible: "Payment"
+- assertVisible: "Apply Coupon"
+
+# Test invalid coupon
+- tapOn: "Apply Coupon"
+- inputText: "INVALID123"
+- tapOn: "Apply"
+- assertVisible: "Invalid coupon"
+
+# Select UPI
+- tapOn: "UPI"
+- assertVisible: "Place Order"

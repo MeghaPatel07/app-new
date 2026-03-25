@@ -1,0 +1,31 @@
+appId: com.weddingease.app
+name: "Chat - Trial Limit (10 messages)"
+---
+- launchApp
+
+# Navigate to Chat
+- tapOn: "Chat"
+- assertVisible: "Chat"
+
+# Send 10 messages — should hit trial limit
+- repeat:
+    times: 10
+    commands:
+      - tapOn:
+          id: "chat-input"
+      - inputText: "Hello stylist!"
+      - tapOn:
+          id: "send-button"
+
+# After 10 messages — input should be disabled, banner shown
+- assertVisible: "You've used your 10 free messages"
+- assertVisible: "Upgrade"
+
+# Input should be disabled
+- assertNotVisible:
+    id: "send-button"
+    enabled: true
+
+# Tap upgrade — should open package screen
+- tapOn: "Upgrade"
+- assertVisible: "Choose Your Package"
