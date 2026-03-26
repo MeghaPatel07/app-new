@@ -6,7 +6,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Image,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useCartStore } from '../store/cartStore';
@@ -58,6 +60,8 @@ export default function CartScreen() {
 
   const total = getTotal();
 
+  const { isGuest } = useAccess();
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
       {/* Header */}
@@ -79,6 +83,17 @@ export default function CartScreen() {
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>🛍</Text>
           <Text style={[Typography.h3, { color: T.textSecondary }]}>Your cart is empty</Text>
+          {isGuest && (
+            <TouchableOpacity
+              style={styles.syncBanner}
+              onPress={() => router.push('/auth/login')}
+            >
+              <Ionicons name="cloud-outline" size={16} color={accent} />
+              <Text style={[Typography.caption, { color: accent, marginLeft: 6 }]}>
+                Sign in to sync your cart across devices
+              </Text>
+            </TouchableOpacity>
+          )}
           <Button
             testID="continue-shopping-button"
             title="Continue Shopping"
@@ -120,11 +135,25 @@ export default function CartScreen() {
 
           {/* Summary footer */}
           <View style={styles.footer}>
-            <View style={styles.totalRow}>
-              <Text style={[Typography.body1, { color: T.textSecondary }]}>Total</Text>
-              <Text style={[Typography.h3, { color: accent }]}>
-                ₹{total.toLocaleString()}
-              </Text>
+            <View style={styles.summaryRows}>
+              <View style={styles.totalRow}>
+                <Text style={[Typography.body2, { color: T.textSecondary }]}>Subtotal ({items.length} items)</Text>
+                <Text style={[Typography.body2, { color: T.textPrimary, fontWeight: '600' }]}>
+                  ₹{total.toLocaleString()}
+                </Text>
+              </View>
+              <View style={styles.totalRow}>
+                <Text style={[Typography.body2, { color: T.textSecondary }]}>Shipping</Text>
+                <Text style={[Typography.body2, { color: T.success, fontWeight: '600' }]}>
+                  Calculated at checkout
+                </Text>
+              </View>
+              <View style={[styles.totalRow, styles.grandTotalRow]}>
+                <Text style={[Typography.body1, { color: T.textPrimary, fontWeight: '700' }]}>Total</Text>
+                <Text style={[Typography.h3, { color: accent }]}>
+                  ₹{total.toLocaleString()}
+                </Text>
+              </View>
             </View>
             <Button
               testID="checkout-button"
@@ -168,9 +197,24 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     ...SHADOW.card,
   },
+  summaryRows: { gap: Spacing.xs },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  grandTotalRow: {
+    borderTopWidth: 1,
+    borderTopColor: T.border,
+    paddingTop: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  syncBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.md,
+    padding: Spacing.sm,
+    backgroundColor: T.accentBg,
+    borderRadius: 8,
   },
 });

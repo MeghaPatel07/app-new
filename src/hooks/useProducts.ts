@@ -322,6 +322,11 @@ export function useProduct(productId: string) {
       const snap = await getDoc(doc(db, 'products', productId));
       if (!snap.exists()) throw new Error('Product not found');
       const data = snap.data();
+      const images = (data.images || []).map(processImageUrl).filter((img: string) => img);
+      const finalImages = images.length > 0
+        ? images
+        : data.defaultImage ? [processImageUrl(data.defaultImage)] : [];
+
       return {
         id: snap.id,
         docId: snap.id,
@@ -332,7 +337,7 @@ export function useProduct(productId: string) {
         originalPrice: data.maxPrice || 0,
         rating: data.rating ?? 0,
         reviews: data.numberOfRating ?? 0,
-        images: (data.images || []).map(processImageUrl),
+        images: finalImages,
         description: data.description || '',
         features: data.detailsList || [],
         trending: data.topSelling ?? false,

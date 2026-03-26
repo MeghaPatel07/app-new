@@ -6,6 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
 import { useNotifications } from '../hooks/useNotifications';
 import { useAuthStore } from '../store/authStore';
+import { useWishlist } from '../hooks/useWishlist';
 import { T } from '../constants/tokens';
 import { ROLE_TABS } from '../constants/roles';
 import { PROTECTED_SEGMENTS } from '../constants/routes';
@@ -18,6 +19,7 @@ const queryClient = new QueryClient({
 function AuthGuard() {
   const { isLoading } = useAuth();
   useNotifications();
+  useWishlist(); // bootstraps guest/user wishlist and handles migration on login
   const { user } = useAuthStore();
   const derivedRole = useAuthStore(s => s.derivedRole());
   const segments = useSegments();

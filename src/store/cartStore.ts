@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface CartItem {
   productId: string;
@@ -8,6 +10,9 @@ export interface CartItem {
   color: string;
   price: number;
   image: string;
+  variantId?: string;
+  variantName?: string;
+  vendorId?: string;
 }
 
 // Unique key for a cart line: same product with different size/color = separate line item
@@ -23,31 +28,39 @@ interface CartState {
   getTotal: () => number;
 }
 
-export const useCartStore = create<CartState>((set, get) => ({
-  items: [],
-  addItem: item =>
-    set(state => {
-      const key = lineKey(item);
-      const existing = state.items.find(i => lineKey(i) === key);
-      if (existing) {
-        return {
-          items: state.items.map(i =>
-            lineKey(i) === key ? { ...i, qty: i.qty + item.qty } : i
-          ),
-        };
-      }
-      return { items: [...state.items, item] };
+export const useCartStore = create<CartState>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      addItem: item =>
+        set(state => {
+          const key = lineKey(item);
+          const existing = state.items.find(i => lineKey(i) === key);
+          if (existing) {
+            return {
+              items: state.items.map(i =>
+                lineKey(i) === key ? { ...i, qty: i.qty + item.qty } : i
+              ),
+            };
+          }
+          return { items: [...state.items, item] };
+        }),
+      removeItem: (productId, size, color) => {
+        const key = lineKey({ productId, size, color });
+        set(state => ({ items: state.items.filter(i => lineKey(i) !== key) }));
+      },
+      updateQty: (productId, size, color, qty) => {
+        const key = lineKey({ productId, size, color });
+        set(state => ({
+          items: state.items.map(i => (lineKey(i) === key ? { ...i, qty } : i)),
+        }));
+      },
+      clearCart: () => set({ items: [] }),
+      getTotal: () => get().items.reduce((sum, i) => sum + i.price * i.qty, 0),
     }),
-  removeItem: (productId, size, color) => {
-    const key = lineKey({ productId, size, color });
-    set(state => ({ items: state.items.filter(i => lineKey(i) !== key) }));
-  },
-  updateQty: (productId, size, color, qty) => {
-    const key = lineKey({ productId, size, color });
-    set(state => ({
-      items: state.items.map(i => (lineKey(i) === key ? { ...i, qty } : i)),
-    }));
-  },
-  clearCart: () => set({ items: [] }),
-  getTotal: () => get().items.reduce((sum, i) => sum + i.price * i.qty, 0),
-}));
+    {
+      name: 'weddingease-cart',
+      storage: createJSONStorage(() => AsyncStorage),
+    }
+  )
+);

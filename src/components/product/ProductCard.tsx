@@ -13,6 +13,7 @@ import { Typography, Spacing } from '../../theme';
 import { ROLE_ACCENT, type UserRole } from '../../constants/roles';
 import { Tag } from '../ui/Tag';
 import { formatPrice } from '../../utils/priceFormatter';
+import { WishlistButton } from './WishlistButton';
 
 export interface ProductTag {
   label: string;
@@ -145,6 +146,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             ))}
           </View>
         )}
+
+        {/* Wishlist heart button */}
+        <WishlistButton
+          productId={id}
+          item={{ name, image: currentImage ?? '', price, originalPrice }}
+          style={styles.wishlistBtn}
+        />
       </View>
 
       {/* Info */}
@@ -225,6 +233,7 @@ const styles = StyleSheet.create({
     backgroundColor: T.white,
   },
   tagsOverlay: { position: 'absolute', top: Spacing.xs, left: Spacing.xs },
+  wishlistBtn: { position: 'absolute', top: Spacing.xs, right: Spacing.xs },
   info: { padding: Spacing.sm, gap: 2 },
   ratingRow: {
     flexDirection: 'row',

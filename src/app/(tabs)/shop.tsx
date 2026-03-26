@@ -570,7 +570,7 @@ export default function ShopTab() {
         <TouchableOpacity
           testID="cart-tab"
           style={styles.cartBtn}
-          onPress={() => router.push('/screens/shop/cart')}
+          onPress={() => router.push('/cart')}
           accessibilityRole="button"
           accessibilityLabel="Cart"
         >
@@ -801,7 +801,7 @@ export default function ShopTab() {
               reviews={(item as any).reviews || (item as any).numberOfRating}
               role="free"
               style={styles.card}
-              onPress={id => router.push(`/screens/shop/product-detail?id=${id}`)}
+              onPress={id => router.push(`/product/${id}`)}
             />
           )}
         />

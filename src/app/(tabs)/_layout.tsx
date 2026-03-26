@@ -54,6 +54,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="wishlist"
+        options={{
+          title: 'Wishlist',
+          href: isStylist ? null : '/wishlist',
+        }}
+      />
+      <Tabs.Screen
         name="consult"
         options={{
           title: isStylist ? 'Clients' : 'Consult',

@@ -87,8 +87,7 @@ export const BRAND = '/screens/brand' as const;
 
 /* -- Protected route names (segments, not paths) for AuthGuard ------------- */
 export const PROTECTED_SEGMENTS = [
-  'cart',
-  'checkout',
+  // 'cart' and 'checkout' intentionally omitted — guests can add to cart and checkout
   'order-confirm',
   'orders',
   'order',
