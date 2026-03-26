@@ -9,15 +9,16 @@ import {
   Platform,
 } from 'react-native';
 import { Audio } from 'expo-av';
-import { Colors, Spacing, BorderRadius, Typography } from '../../theme';
-import type { RoleTheme } from '../../theme';
+import { T, RADIUS } from '../../constants/tokens';
+import { Spacing, Typography } from '../../theme';
+import { ROLE_ACCENT, type UserRole } from '../../constants/roles';
 
 interface ChatInputProps {
   onSendText: (text: string) => void;
   onSendAudio?: (uri: string, duration: number) => void;
   onPickImage?: () => void;
   disabled?: boolean;        // true when trial limit hit
-  role?: RoleTheme;
+  role?: UserRole;
   testID?: string;
 }
 
@@ -33,7 +34,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const recordingRef = useRef<Audio.Recording | null>(null);
   const recordingStartedAt = useRef<number>(0);
-  const primaryColor = Colors[role].primary;
+  const primaryColor = ROLE_ACCENT[role];
 
   const handleSend = () => {
     const trimmed = text.trim();
@@ -105,7 +106,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         disabled={disabled}
         style={[styles.iconBtn, disabled && styles.iconDisabled]}
       >
-        <Text style={styles.iconText}>📎</Text>
+        <Text style={styles.iconText}>{'\u{1F4CE}'}</Text>
       </TouchableOpacity>
 
       {/* Text field */}
@@ -114,8 +115,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         style={[styles.input, disabled && styles.inputDisabled]}
         value={text}
         onChangeText={setText}
-        placeholder={disabled ? 'Upgrade to continue chatting…' : 'Type a message…'}
-        placeholderTextColor={Colors.gray400}
+        placeholder={disabled ? 'Upgrade to continue chatting\u2026' : 'Type a message\u2026'}
+        placeholderTextColor={T.dim}
         multiline
         maxLength={1000}
         editable={!disabled}
@@ -129,7 +130,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           disabled={disabled}
           style={[styles.sendBtn, { backgroundColor: primaryColor }, disabled && styles.iconDisabled]}
         >
-          <Text style={styles.sendIcon}>➤</Text>
+          <Text style={styles.sendIcon}>{'\u27A4'}</Text>
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
@@ -140,11 +141,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           delayLongPress={200}
           style={[
             styles.iconBtn,
-            isRecording && { backgroundColor: Colors.error + '22' },
+            isRecording && { backgroundColor: T.roseBg },
             disabled && styles.iconDisabled,
           ]}
         >
-          <Text style={styles.iconText}>{isRecording ? '🔴' : '🎤'}</Text>
+          <Text style={styles.iconText}>{isRecording ? '\u{1F534}' : '\u{1F3A4}'}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -157,30 +158,31 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
-    backgroundColor: '#FFF',
+    backgroundColor: T.white,
     borderTopWidth: 1,
-    borderTopColor: Colors.gray200,
+    borderTopColor: T.border,
     gap: Spacing.xs,
   },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: Colors.gray300,
-    borderRadius: BorderRadius.xl,
+    borderColor: T.border,
+    borderRadius: RADIUS.xl,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     maxHeight: 100,
     ...Typography.body2,
-    color: Colors.gray900,
+    color: T.ink,
+    backgroundColor: T.s1,
   },
   inputDisabled: {
-    backgroundColor: Colors.gray100,
-    color: Colors.gray500,
+    backgroundColor: T.s3,
+    color: T.dim,
   },
   iconBtn: {
     width: 38,
     height: 38,
-    borderRadius: BorderRadius.full,
+    borderRadius: RADIUS.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -189,9 +191,9 @@ const styles = StyleSheet.create({
   sendBtn: {
     width: 38,
     height: 38,
-    borderRadius: BorderRadius.full,
+    borderRadius: RADIUS.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sendIcon: { color: '#FFF', fontSize: 16 },
+  sendIcon: { color: T.white, fontSize: 16 },
 });

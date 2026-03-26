@@ -1,4 +1,4 @@
-appId: com.weddingease.app
+appId: weddingease.serviceapp
 name: "Free Consultation Booking (Guest Flow)"
 ---
 - launchApp:

@@ -1,13 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
-import type { RoleTheme } from '../../theme';
+import { T, RADIUS } from '../../constants/tokens';
+import { Typography, Spacing } from '../../theme';
+import { ROLE_ACCENT, type UserRole } from '../../constants/roles';
 
 interface TrialLimitBannerProps {
   /** Number of messages remaining (0 = limit reached). */
   remaining: number;
   onUpgrade: () => void;
-  role?: RoleTheme;
+  role?: UserRole;
   testID?: string;
 }
 
@@ -17,7 +18,7 @@ export const TrialLimitBanner: React.FC<TrialLimitBannerProps> = ({
   role = 'guest',
   testID,
 }) => {
-  const primaryColor = Colors[role].primary;
+  const primaryColor = ROLE_ACCENT[role];
   const limitReached = remaining === 0;
 
   return (
@@ -36,7 +37,7 @@ export const TrialLimitBanner: React.FC<TrialLimitBannerProps> = ({
         onPress={onUpgrade}
         style={[styles.btn, { backgroundColor: primaryColor }]}
       >
-        <Text style={[Typography.button, { color: '#FFF' }]}>
+        <Text style={[Typography.button, { color: T.white }]}>
           {limitReached ? 'View Packages' : 'Upgrade Now'}
         </Text>
       </TouchableOpacity>
@@ -53,19 +54,19 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   bannerWarning: {
-    backgroundColor: '#FFF8E1',
-    borderTopColor: '#FFE082',
+    backgroundColor: T.goldBg,
+    borderTopColor: T.gold,
   },
   bannerLimit: {
-    backgroundColor: '#FFEBEE',
-    borderTopColor: '#EF9A9A',
+    backgroundColor: T.roseBg,
+    borderTopColor: T.rose,
   },
   text: {
-    color: Colors.gray800,
+    color: T.heading,
     textAlign: 'center',
   },
   btn: {
-    borderRadius: BorderRadius.md,
+    borderRadius: RADIUS.md,
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.lg,
   },

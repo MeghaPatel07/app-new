@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
-import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
-import type { RoleTheme } from '../../theme';
+import { T, RADIUS } from '../../constants/tokens';
+import { Typography, Spacing } from '../../theme';
+import { ROLE_ACCENT, type UserRole } from '../../constants/roles';
 
 export type DeliveryType = 'standard' | 'express';
 
@@ -13,13 +14,13 @@ interface DeliveryOptionsProps {
   standardPrice?: number;
   expressPrice?: number;
   insurancePrice?: number;
-  role?: RoleTheme;
+  role?: UserRole;
   testID?: string;
 }
 
 const DELIVERY_OPTIONS: { type: DeliveryType; label: string; eta: string }[] = [
-  { type: 'standard', label: 'Standard Delivery', eta: '5–7 business days' },
-  { type: 'express',  label: 'Express Delivery',  eta: '1–2 business days' },
+  { type: 'standard', label: 'Standard Delivery', eta: '5\u20137 business days' },
+  { type: 'express',  label: 'Express Delivery',  eta: '1\u20132 business days' },
 ];
 
 export const DeliveryOptions: React.FC<DeliveryOptionsProps> = ({
@@ -30,10 +31,10 @@ export const DeliveryOptions: React.FC<DeliveryOptionsProps> = ({
   standardPrice = 0,
   expressPrice = 199,
   insurancePrice = 49,
-  role = 'client',
+  role = 'free',
   testID,
 }) => {
-  const primaryColor = Colors[role].primary;
+  const primaryColor = ROLE_ACCENT[role];
   const prices: Record<DeliveryType, number> = { standard: standardPrice, express: expressPrice };
 
   return (
@@ -54,11 +55,11 @@ export const DeliveryOptions: React.FC<DeliveryOptionsProps> = ({
               {isSelected && <View style={[styles.radioDot, { backgroundColor: primaryColor }]} />}
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[Typography.body2, { fontWeight: '600', color: Colors.gray900 }]}>{label}</Text>
-              <Text style={[Typography.caption, { color: Colors.gray500 }]}>{eta}</Text>
+              <Text style={[Typography.body2, { fontWeight: '600', color: T.ink }]}>{label}</Text>
+              <Text style={[Typography.caption, { color: T.dim }]}>{eta}</Text>
             </View>
             <Text style={[Typography.body2, { fontWeight: '600', color: primaryColor }]}>
-              {prices[type] === 0 ? 'FREE' : `₹${prices[type]}`}
+              {prices[type] === 0 ? 'FREE' : `\u20B9${prices[type]}`}
             </Text>
           </TouchableOpacity>
         );
@@ -67,17 +68,17 @@ export const DeliveryOptions: React.FC<DeliveryOptionsProps> = ({
       {/* Insurance toggle */}
       <View style={styles.insuranceRow}>
         <View style={{ flex: 1 }}>
-          <Text style={[Typography.body2, { fontWeight: '600', color: Colors.gray900 }]}>Shipping Insurance</Text>
-          <Text style={[Typography.caption, { color: Colors.gray500 }]}>
-            Protect your order — ₹{insurancePrice}
+          <Text style={[Typography.body2, { fontWeight: '600', color: T.ink }]}>Shipping Insurance</Text>
+          <Text style={[Typography.caption, { color: T.dim }]}>
+            Protect your order {'\u2014'} {'\u20B9'}{insurancePrice}
           </Text>
         </View>
         <Switch
           testID="insurance-toggle"
           value={insurance}
           onValueChange={onInsuranceToggle}
-          trackColor={{ false: Colors.gray300, true: primaryColor + '88' }}
-          thumbColor={insurance ? primaryColor : Colors.gray400}
+          trackColor={{ false: T.border, true: primaryColor + '88' }}
+          thumbColor={insurance ? primaryColor : T.muted}
         />
       </View>
     </View>
@@ -91,8 +92,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.gray300,
-    borderRadius: BorderRadius.md,
+    borderColor: T.border,
+    borderRadius: RADIUS.md,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
     gap: Spacing.sm,
@@ -102,7 +103,7 @@ const styles = StyleSheet.create({
     height: RADIO_SIZE,
     borderRadius: RADIO_SIZE / 2,
     borderWidth: 2,
-    borderColor: Colors.gray400,
+    borderColor: T.muted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -115,8 +116,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.gray200,
-    borderRadius: BorderRadius.md,
+    borderColor: T.border,
+    borderRadius: RADIUS.md,
     padding: Spacing.md,
     marginTop: Spacing.xs,
   },

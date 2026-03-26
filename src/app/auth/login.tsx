@@ -14,11 +14,12 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useGoogleAuth, signInWithGoogleCredential, firebaseAuth } from '../../firebase/auth';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Colors } from '../../theme/colors';
+import { T } from '../../constants/tokens';
+import { ROLE_ACCENT } from '../../constants/roles';
 import { Typography } from '../../theme/typography';
 import { Spacing } from '../../theme/spacing';
 
-const theme = Colors.guest;
+const guestAccent = ROLE_ACCENT.guest;
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -114,7 +115,7 @@ export default function LoginScreen() {
           value={email}
           onChangeText={t => { setEmail(t); if (emailError) setEmailError(''); }}
           error={emailError}
-          color={theme.primary}
+          color={guestAccent}
         />
 
         {/* Password */}
@@ -125,7 +126,7 @@ export default function LoginScreen() {
           value={password}
           onChangeText={t => { setPassword(t); if (passwordError) setPasswordError(''); }}
           error={passwordError}
-          color={theme.primary}
+          color={guestAccent}
         />
 
         {/* Sign In */}
@@ -134,7 +135,7 @@ export default function LoginScreen() {
           title="Sign In"
           onPress={handleEmailLogin}
           loading={loading}
-          color={theme.primary}
+          color={guestAccent}
           size="lg"
           style={styles.mainBtn}
         />
@@ -151,7 +152,7 @@ export default function LoginScreen() {
           title="Continue with Google"
           onPress={handleGoogleLogin}
           variant="outline"
-          color={theme.primary}
+          color={guestAccent}
           size="lg"
           style={styles.altBtn}
           disabled={loading || !request}
@@ -163,7 +164,7 @@ export default function LoginScreen() {
           title="Continue with Phone"
           onPress={() => router.push('/auth/otp')}
           variant="outline"
-          color={theme.primary}
+          color={guestAccent}
           size="lg"
           style={styles.altBtn}
           disabled={loading}
@@ -185,11 +186,11 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.background },
+  safe: { flex: 1, backgroundColor: T.bg },
   container: { flex: 1, paddingHorizontal: Spacing.lg, justifyContent: 'center' },
   header: { marginBottom: Spacing.xl, alignItems: 'center' },
-  title: { ...Typography.h1, color: theme.primary, marginBottom: Spacing.xs },
-  subtitle: { ...Typography.h3, color: theme.text },
+  title: { ...Typography.h1, color: guestAccent, marginBottom: Spacing.xs },
+  subtitle: { ...Typography.h3, color: T.heading },
   mainBtn: { marginTop: Spacing.sm },
   altBtn: { marginBottom: Spacing.sm },
   divider: {
@@ -198,11 +199,11 @@ const styles = StyleSheet.create({
     marginVertical: Spacing.md,
     gap: Spacing.sm,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.gray300 },
-  dividerText: { color: Colors.gray500, fontSize: 14 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: T.gray300 },
+  dividerText: { color: T.gray500, fontSize: 14 },
   linkBtn: { alignItems: 'center', paddingVertical: Spacing.md, marginTop: Spacing.sm },
   linkText: {
-    color: theme.primary,
+    color: guestAccent,
     fontSize: 16,
     fontWeight: '600',
     textDecorationLine: 'underline',

@@ -1,20 +1,33 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
+import { T, RADIUS } from '../../constants/tokens';
+import { Spacing } from '../../theme';
 
-type TagVariant = 'bestseller' | 'stylistPick' | 'newArrival' | 'sale' | 'custom';
+type TagVariant =
+  | 'bestseller'
+  | 'stylistPick'
+  | 'newArrival'
+  | 'sale'
+  | 'premium'
+  | 'stylist'
+  | 'free'
+  | 'custom';
 
 const TAG_COLORS: Record<TagVariant, { bg: string; text: string }> = {
-  bestseller:  { bg: '#FFF3E0', text: '#E65100' },
-  stylistPick: { bg: '#F3E5F5', text: '#7B1FA2' },
-  newArrival:  { bg: '#E8F5E9', text: '#2E7D32' },
-  sale:        { bg: '#FFEBEE', text: '#C62828' },
-  custom:      { bg: Colors.gray100, text: Colors.gray700 },
+  bestseller:  { bg: T.goldBg,    text: T.gold },
+  stylistPick: { bg: T.purpleBg,  text: T.purple },
+  newArrival:  { bg: T.sageBg,    text: T.sage },
+  sale:        { bg: T.roseBg,    text: T.rose },
+  premium:     { bg: T.goldBg,    text: T.gold },
+  stylist:     { bg: T.purpleBg,  text: T.purple },
+  free:        { bg: T.sageBg,    text: T.sage },
+  custom:      { bg: T.s3,        text: T.body },
 };
 
 interface TagProps {
   label: string;
   variant?: TagVariant;
+  size?: 'sm' | 'md';
   bg?: string;
   color?: string;
   style?: ViewStyle;
@@ -23,20 +36,30 @@ interface TagProps {
 export const Tag: React.FC<TagProps> = ({
   label,
   variant = 'custom',
+  size = 'sm',
   bg,
   color,
   style,
 }) => {
   const palette = TAG_COLORS[variant];
+  const isMd = size === 'md';
+
   return (
     <View
       style={[
         styles.tag,
+        isMd && styles.tagMd,
         { backgroundColor: bg ?? palette.bg },
         style,
       ]}
     >
-      <Text style={[Typography.caption, { color: color ?? palette.text, fontWeight: '600' }]}>
+      <Text
+        style={[
+          styles.label,
+          isMd && styles.labelMd,
+          { color: color ?? palette.text },
+        ]}
+      >
         {label}
       </Text>
     </View>
@@ -46,8 +69,20 @@ export const Tag: React.FC<TagProps> = ({
 const styles = StyleSheet.create({
   tag: {
     alignSelf: 'flex-start',
-    borderRadius: BorderRadius.sm,
+    borderRadius: RADIUS.sm,
     paddingVertical: 2,
     paddingHorizontal: Spacing.xs,
+  },
+  tagMd: {
+    paddingVertical: 4,
+    paddingHorizontal: Spacing.sm,
+  },
+  label: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  labelMd: {
+    fontSize: 12,
   },
 });

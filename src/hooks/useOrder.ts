@@ -1,17 +1,8 @@
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
-
-export interface Order {
-  id: string;
-  userId: string;
-  status: string;
-  items: any[];
-  total: number;
-  address: any;
-  createdAt: any;
-  updatedAt: any;
-}
+import type { Order, StatusEvent } from '../types';
+import { OrderStatus } from '../types';
 
 export function useOrder(orderId: string) {
   const [order, setOrder] = useState<Order | null>(null);
@@ -23,7 +14,29 @@ export function useOrder(orderId: string) {
     const unsub = onSnapshot(
       doc(db, 'orders', orderId),
       snap => {
-        setOrder(snap.exists() ? ({ id: snap.id, ...snap.data() } as Order) : null);
+        if (snap.exists()) {
+          const data = snap.data();
+          const parsed: Order = {
+            id: snap.id,
+            userId: data.userId ?? '',
+            status: (data.status as OrderStatus) ?? OrderStatus.Payed,
+            items: Array.isArray(data.items) ? data.items : [],
+            total: data.total ?? 0,
+            address: data.address ?? { line1: '', city: '', state: '', pincode: '' },
+            paymentId: data.paymentId,
+            razorpayOrderId: data.razorpayOrderId,
+            couponCode: data.couponCode,
+            statusHistory: Array.isArray(data.statusHistory)
+              ? (data.statusHistory as StatusEvent[])
+              : [],
+            stylistId: data.stylistId,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
+          };
+          setOrder(parsed);
+        } else {
+          setOrder(null);
+        }
         setIsLoading(false);
       },
       err => { setError(err); setIsLoading(false); }

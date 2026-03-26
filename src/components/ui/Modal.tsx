@@ -4,12 +4,12 @@ import {
   View,
   TouchableOpacity,
   StyleSheet,
-  Animated,
   KeyboardAvoidingView,
   Platform,
   ViewStyle,
 } from 'react-native';
-import { Colors, BorderRadius, Spacing } from '../../theme';
+import { T, RADIUS } from '../../constants/tokens';
+import { Spacing } from '../../theme';
 
 interface ModalProps {
   visible: boolean;
@@ -69,9 +69,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.gray50,
-    borderTopLeftRadius:  BorderRadius.xl,
-    borderTopRightRadius: BorderRadius.xl,
+    backgroundColor: T.cardBg,
+    borderTopLeftRadius:  RADIUS.xl,
+    borderTopRightRadius: RADIUS.xl,
     padding: Spacing.lg,
     paddingBottom: Spacing.xxl,
   },
@@ -79,8 +79,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: 40,
     height: 4,
-    borderRadius: BorderRadius.full,
-    backgroundColor: Colors.gray300,
+    borderRadius: RADIUS.full,
+    backgroundColor: T.border,
     marginBottom: Spacing.md,
   },
 });

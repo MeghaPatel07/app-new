@@ -18,12 +18,13 @@ import { db } from '../../firebase/config';
 import { api } from '../../lib/api';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Colors } from '../../theme/colors';
+import { T } from '../../constants/tokens';
+import { ROLE_ACCENT } from '../../constants/roles';
 import { Typography } from '../../theme/typography';
 import { Spacing, BorderRadius } from '../../theme/spacing';
 import type { WeddingRole } from '../../types';
 
-const theme = Colors.guest;
+const guestAccent = ROLE_ACCENT.guest;
 const WEDDING_ROLES: WeddingRole[] = ['bride', 'groom', 'family'];
 
 export default function RegisterScreen() {
@@ -121,7 +122,7 @@ export default function RegisterScreen() {
             value={name}
             onChangeText={t => { setName(t); clearError('name'); }}
             error={errors.name}
-            color={theme.primary}
+            color={guestAccent}
           />
           <Input
             testID="input-email"
@@ -133,7 +134,7 @@ export default function RegisterScreen() {
             value={email}
             onChangeText={t => { setEmail(t); clearError('email'); }}
             error={errors.email}
-            color={theme.primary}
+            color={guestAccent}
           />
           <Input
             testID="input-phone"
@@ -143,7 +144,7 @@ export default function RegisterScreen() {
             value={phone}
             onChangeText={t => { setPhone(t); clearError('phone'); }}
             error={errors.phone}
-            color={theme.primary}
+            color={guestAccent}
           />
           <Input
             testID="input-password"
@@ -153,7 +154,7 @@ export default function RegisterScreen() {
             value={password}
             onChangeText={t => { setPassword(t); clearError('password'); }}
             error={errors.password}
-            color={theme.primary}
+            color={guestAccent}
           />
           <Input
             testID="input-wedding-date"
@@ -162,7 +163,7 @@ export default function RegisterScreen() {
             value={weddingDate}
             onChangeText={t => { setWeddingDate(t); clearError('weddingDate'); }}
             error={errors.weddingDate}
-            color={theme.primary}
+            color={guestAccent}
           />
 
           {/* Wedding Role */}
@@ -191,7 +192,7 @@ export default function RegisterScreen() {
             title="Create Account"
             onPress={handleRegister}
             loading={loading}
-            color={theme.primary}
+            color={guestAccent}
             size="lg"
             style={styles.mainBtn}
           />
@@ -211,12 +212,12 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.background },
+  safe: { flex: 1, backgroundColor: T.bg },
   container: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xl },
   header: { marginBottom: Spacing.xl, alignItems: 'center' },
-  title: { ...Typography.h1, color: theme.primary, marginBottom: Spacing.xs },
-  subtitle: { ...Typography.h3, color: theme.text },
-  roleLabel: { ...Typography.body2, color: Colors.gray600, marginBottom: Spacing.sm },
+  title: { ...Typography.h1, color: guestAccent, marginBottom: Spacing.xs },
+  subtitle: { ...Typography.h3, color: T.heading },
+  roleLabel: { ...Typography.body2, color: T.gray600, marginBottom: Spacing.sm },
   roleRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.md },
   roleChip: {
     flex: 1,
@@ -224,14 +225,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.gray300,
+    borderColor: T.gray300,
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.gray50,
+    backgroundColor: T.gray50,
   },
-  roleChipActive: { borderColor: theme.primary, backgroundColor: theme.primary },
-  roleChipText: { ...Typography.button, color: Colors.gray600 },
-  roleChipTextActive: { color: '#fff' },
+  roleChipActive: { borderColor: guestAccent, backgroundColor: guestAccent },
+  roleChipText: { ...Typography.button, color: T.gray600 },
+  roleChipTextActive: { color: T.white },
   mainBtn: { marginTop: Spacing.sm },
   linkBtn: { alignItems: 'center', paddingVertical: Spacing.md, marginTop: Spacing.sm },
-  linkText: { color: theme.primary, fontSize: 14, fontWeight: '600' },
+  linkText: { color: guestAccent, fontSize: 14, fontWeight: '600' },
 });

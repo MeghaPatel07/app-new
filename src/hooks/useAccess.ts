@@ -1,21 +1,65 @@
 import { useAuthStore } from '../store/authStore';
+import { ROLE_ACCENT } from '../constants/roles';
+import type { UserRole } from '../constants/roles';
 
-export const useAccess = () => {
-  const { role, profile } = useAuthStore();
+export type { UserRole };
 
-  const isGuest = role === 'guest';
-  const isStylist = role === 'stylist';
-  // packageId is a Firestore document ID (e.g. 'pkg_premium_bridal'), not the string 'premium'
-  const isPremium = role === 'client' && !!profile?.packageId;
-  const isFree = role === 'client' && !profile?.packageId;
+export type AccessFlags = {
+  role:               UserRole;
+  accent:             string;
+
+  // Auth state
+  isGuest:            boolean;
+  isFree:             boolean;    // logged in, no package
+  isPremium:          boolean;    // logged in, package active
+  isStylist:          boolean;
+
+  // Feature gates — used directly in components
+  canChat:            boolean;    // everyone (limited by trial counter for guest/free)
+  hasUnlimitedChat:   boolean;    // premium only
+  canBookPaidSession: boolean;    // premium only
+  hasFreeConsult:     boolean;    // everyone
+  canEaseBot:         boolean;    // premium + stylist
+  canViewStyleBoard:  boolean;    // premium only
+  canShop:            boolean;    // everyone
+  canWishlist:        boolean;    // free + premium (not guest)
+  canViewOrders:      boolean;    // free + premium (not guest)
+  showUpgradePrompts: boolean;    // free only — gentle package CTAs
+  showLockIcons:      boolean;    // free only — lock on EaseBot etc.
+  isClientSide:       boolean;    // guest + free + premium (not stylist)
+  isStylistSide:      boolean;    // stylist only
+};
+
+export const useAccess = (): AccessFlags => {
+  const { profile } = useAuthStore();
+  const derivedRole = useAuthStore(s => s.derivedRole());
+
+  const accent    = ROLE_ACCENT[derivedRole];
+  const isGuest   = derivedRole === 'guest';
+  const isFree    = derivedRole === 'free';
+  const isPremium = derivedRole === 'premium';
+  const isStylist = derivedRole === 'stylist';
 
   return {
+    role: derivedRole,
+    accent,
     isGuest,
     isFree,
     isPremium,
     isStylist,
-    canChat: !isGuest,
-    canEaseBot: isPremium || isStylist,
-    canBook: !isGuest,
+
+    canChat:            true,
+    hasUnlimitedChat:   isPremium,
+    canBookPaidSession: isPremium,
+    hasFreeConsult:     true,
+    canEaseBot:         isPremium || isStylist,
+    canViewStyleBoard:  isPremium,
+    canShop:            true,
+    canWishlist:        !isGuest,
+    canViewOrders:      !isGuest,
+    showUpgradePrompts: isFree,
+    showLockIcons:      isFree,
+    isClientSide:       !isStylist,
+    isStylistSide:      isStylist,
   };
 };

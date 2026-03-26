@@ -13,16 +13,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useProduct } from '../../hooks/useProducts';
 import { useCartStore } from '../../store/cartStore';
-import { useAuthStore } from '../../store/authStore';
+import { useAccess } from '../../hooks/useAccess';
 import { Button } from '../../components/ui/Button';
-import { Colors } from '../../theme/colors';
+import { T } from '../../constants/tokens';
 import { Typography } from '../../theme/typography';
 import { Spacing, BorderRadius } from '../../theme/spacing';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { role } = useAuthStore();
+  const { accent } = useAccess();
   const addItem = useCartStore(s => s.addItem);
 
   const { data: product, isLoading, error } = useProduct(id!);
@@ -31,8 +31,6 @@ export default function ProductDetailScreen() {
   const [selectedColor, setSelectedColor] = useState('');
   const [imageIndex, setImageIndex] = useState(0);
   const [adding, setAdding] = useState(false);
-
-  const theme = Colors[role === 'stylist' ? 'stylist' : 'client'];
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -65,7 +63,7 @@ export default function ProductDetailScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={theme.primary} />
+          <ActivityIndicator size="large" color={accent} />
         </View>
       </SafeAreaView>
     );
@@ -75,7 +73,7 @@ export default function ProductDetailScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <Text style={{ color: Colors.error }}>Product not found.</Text>
+          <Text style={{ color: T.rose }}>Product not found.</Text>
         </View>
       </SafeAreaView>
     );
@@ -84,7 +82,7 @@ export default function ProductDetailScreen() {
   const images = product.images ?? [];
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Image carousel */}
         <View style={styles.imageContainer}>
@@ -105,7 +103,7 @@ export default function ProductDetailScreen() {
                   key={i}
                   testID={`product-image-${i}`}
                   onPress={() => setImageIndex(i)}
-                  style={[styles.thumb, i === imageIndex && { borderColor: theme.primary }]}
+                  style={[styles.thumb, i === imageIndex && { borderColor: accent }]}
                 >
                   <Image source={{ uri: img }} style={styles.thumbImg} resizeMode="cover" />
                 </TouchableOpacity>
@@ -121,21 +119,21 @@ export default function ProductDetailScreen() {
             onPress={() => router.back()}
             style={styles.backBtn}
           >
-            <Text style={{ color: theme.primary, fontWeight: '600' }}>← Back</Text>
+            <Text style={{ color: accent, fontWeight: '600' }}>← Back</Text>
           </TouchableOpacity>
 
           {/* Name & Price */}
-          <Text style={[Typography.h2, { color: theme.text }]}>{product.name}</Text>
-          <Text style={[Typography.body2, { color: Colors.gray500, marginTop: 2 }]}>
+          <Text style={[Typography.h2, { color: T.heading }]}>{product.name}</Text>
+          <Text style={[Typography.body2, { color: T.gray500, marginTop: 2 }]}>
             {product.category}
           </Text>
-          <Text style={[styles.price, { color: theme.primary }]}>
+          <Text style={[styles.price, { color: accent }]}>
             ₹{product.price.toLocaleString()}
           </Text>
 
           {/* Description */}
           {product.description ? (
-            <Text style={[Typography.body1, { color: Colors.gray700, marginTop: Spacing.md }]}>
+            <Text style={[Typography.body1, { color: T.gray700, marginTop: Spacing.md }]}>
               {product.description}
             </Text>
           ) : null}
@@ -149,12 +147,12 @@ export default function ProductDetailScreen() {
                   <TouchableOpacity
                     key={s}
                     testID="size-option"
-                    style={[styles.option, selectedSize === s && { borderColor: theme.primary, backgroundColor: theme.primary }]}
+                    style={[styles.option, selectedSize === s && { borderColor: accent, backgroundColor: accent }]}
                     onPress={() => setSelectedSize(s)}
                     accessibilityRole="button"
                     accessibilityLabel={`Size ${s}`}
                   >
-                    <Text style={[styles.optionText, selectedSize === s && { color: '#fff' }]}>{s}</Text>
+                    <Text style={[styles.optionText, selectedSize === s && { color: T.white }]}>{s}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -170,12 +168,12 @@ export default function ProductDetailScreen() {
                   <TouchableOpacity
                     key={c}
                     testID="color-option"
-                    style={[styles.option, selectedColor === c && { borderColor: theme.primary, backgroundColor: theme.primary }]}
+                    style={[styles.option, selectedColor === c && { borderColor: accent, backgroundColor: accent }]}
                     onPress={() => setSelectedColor(c)}
                     accessibilityRole="button"
                     accessibilityLabel={`Color ${c}`}
                   >
-                    <Text style={[styles.optionText, selectedColor === c && { color: '#fff' }]}>{c}</Text>
+                    <Text style={[styles.optionText, selectedColor === c && { color: T.white }]}>{c}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -183,7 +181,7 @@ export default function ProductDetailScreen() {
           )}
 
           {/* Stock status */}
-          <Text style={{ color: product.stock > 0 ? Colors.success : Colors.error, marginBottom: Spacing.md }}>
+          <Text style={{ color: product.stock > 0 ? T.success : T.rose, marginBottom: Spacing.md }}>
             {product.stock > 0 ? `In Stock (${product.stock} available)` : 'Out of Stock'}
           </Text>
 
@@ -194,7 +192,7 @@ export default function ProductDetailScreen() {
             onPress={handleAddToCart}
             loading={adding}
             disabled={product.stock === 0}
-            color={theme.primary}
+            color={accent}
             size="lg"
           />
         </View>
@@ -206,9 +204,9 @@ export default function ProductDetailScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  imageContainer: { backgroundColor: Colors.gray100 },
+  imageContainer: { backgroundColor: T.gray100 },
   mainImage: { width: '100%', aspectRatio: 3 / 4 },
-  imagePlaceholder: { backgroundColor: Colors.gray200 },
+  imagePlaceholder: { backgroundColor: T.gray200 },
   thumbnails: {
     flexDirection: 'row',
     padding: Spacing.sm,
@@ -227,14 +225,14 @@ const styles = StyleSheet.create({
   backBtn: { marginBottom: Spacing.sm },
   price: { ...Typography.h2, marginTop: Spacing.sm },
   section: { marginTop: Spacing.lg },
-  sectionLabel: { ...Typography.body2, fontWeight: '600', color: Colors.gray700, marginBottom: Spacing.sm },
+  sectionLabel: { ...Typography.body2, fontWeight: '600', color: T.gray700, marginBottom: Spacing.sm },
   optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   option: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderWidth: 1.5,
-    borderColor: Colors.gray300,
+    borderColor: T.gray300,
     borderRadius: BorderRadius.sm,
   },
-  optionText: { fontSize: 14, fontWeight: '500', color: Colors.gray700 },
+  optionText: { fontSize: 14, fontWeight: '500', color: T.gray700 },
 });

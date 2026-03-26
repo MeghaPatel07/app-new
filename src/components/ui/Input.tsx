@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TextInput, View, Text, StyleSheet, TextInputProps } from 'react-native';
-import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
+import { T, RADIUS } from '../../constants/tokens';
+import { Typography, Spacing } from '../../theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -11,7 +12,7 @@ interface InputProps extends TextInputProps {
 export const Input: React.FC<InputProps> = ({
   label,
   error,
-  color = Colors.premium.primary,
+  color = T.accent,
   style,
   testID,
   ...props
@@ -26,12 +27,12 @@ export const Input: React.FC<InputProps> = ({
         style={[
           styles.input,
           focused && { borderColor: color },
-          error  && { borderColor: Colors.error },
+          error  && { borderColor: T.rose },
           style as any,
         ]}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        placeholderTextColor={Colors.gray400}
+        placeholderTextColor={T.dim}
         {...props}
       />
       {error && <Text style={[Typography.caption, styles.error]}>{error}</Text>}
@@ -41,14 +42,15 @@ export const Input: React.FC<InputProps> = ({
 
 const styles = StyleSheet.create({
   container: { marginBottom: Spacing.md },
-  label: { marginBottom: Spacing.xs, color: Colors.gray700 },
+  label: { marginBottom: Spacing.xs, color: T.heading },
   input: {
     borderWidth: 1,
-    borderColor: Colors.gray300,
-    borderRadius: BorderRadius.md,
+    borderColor: T.border,
+    borderRadius: RADIUS.md,
     padding: Spacing.sm,
+    backgroundColor: T.s3,
     ...Typography.body1,
-    color: Colors.gray900,
+    color: T.ink,
   },
-  error: { marginTop: Spacing.xs, color: Colors.error },
+  error: { marginTop: Spacing.xs, color: T.rose },
 });

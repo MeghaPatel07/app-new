@@ -1,11 +1,13 @@
 import { Colors } from './colors';
 import { Typography } from './typography';
 import { Spacing, BorderRadius } from './spacing';
+import type { UserRole } from '../constants/roles';
 
-export type RoleTheme = 'guest' | 'client' | 'premium' | 'stylist';
+/** @deprecated Use UserRole from '../constants/roles' instead. */
+export type RoleTheme = UserRole;
 
 export const getTheme = (role: RoleTheme) => ({
-  colors: { ...Colors[role], neutral: Colors },
+  colors: { ...Colors[role === 'free' ? 'client' : role], neutral: Colors },
   typography: Typography,
   spacing: Spacing,
   radius: BorderRadius,

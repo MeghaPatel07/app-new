@@ -5,21 +5,25 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  FlatList,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { api } from '../../lib/api';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Colors } from '../../theme/colors';
-import { Typography } from '../../theme/typography';
-import { Spacing, BorderRadius } from '../../theme/spacing';
-import type { WeddingRole } from '../../types';
+import { Icon } from '../../components/primitives/Icon';
+import { ConsultCard, type ConsultSession } from '../../components/shared/ConsultCard';
+import { useAccess } from '../../hooks/useAccess';
+import { useAuthStore } from '../../store/authStore';
+import { T, F, RADIUS, SHADOW } from '../../constants/tokens';
 
 type ConsultStep = 'landing' | 'form' | 'slots' | 'confirmed';
+type WeddingRole = 'bride' | 'groom' | 'family';
 
 interface FormData {
   name: string;
@@ -38,16 +42,156 @@ interface TimeSlot {
 
 const WEDDING_ROLES: WeddingRole[] = ['bride', 'groom', 'family'];
 
-// Fallback slots if API unavailable
 const FALLBACK_SLOTS: TimeSlot[] = [
-  { id: 'slot_1', label: '10:00 AM – 10:30 AM', date: 'Tomorrow', available: true },
-  { id: 'slot_2', label: '11:00 AM – 11:30 AM', date: 'Tomorrow', available: true },
-  { id: 'slot_3', label: '2:00 PM – 2:30 PM', date: 'Tomorrow', available: true },
-  { id: 'slot_4', label: '3:00 PM – 3:30 PM', date: 'Day after', available: true },
-  { id: 'slot_5', label: '5:00 PM – 5:30 PM', date: 'Day after', available: true },
+  { id: 'slot_1', label: '10:00 AM - 10:30 AM', date: 'Tomorrow', available: true },
+  { id: 'slot_2', label: '11:00 AM - 11:30 AM', date: 'Tomorrow', available: true },
+  { id: 'slot_3', label: '2:00 PM - 2:30 PM', date: 'Tomorrow', available: true },
+  { id: 'slot_4', label: '3:00 PM - 3:30 PM', date: 'Day after', available: true },
+  { id: 'slot_5', label: '5:00 PM - 5:30 PM', date: 'Day after', available: true },
 ];
 
+/**
+ * Consult tab screen.
+ *
+ * Free/Guest: Free consult booking flow (form + slot picker).
+ *   Shows "Free Slot + Used" state after booking.
+ *   Free users also see upgrade prompt.
+ *
+ * Premium: Full consultation list with upcoming/past sessions.
+ *   Can book paid sessions. Shows session history link.
+ */
 export default function ConsultTab() {
+  const router = useRouter();
+  const {
+    role, accent, isGuest, isFree, isPremium, isStylist,
+    canBookPaidSession, showUpgradePrompts, hasFreeConsult,
+  } = useAccess();
+  const { profile } = useAuthStore();
+
+  // ── Premium view ──────────────────────────────────────────────────────────
+  if (isPremium) {
+    return <PremiumConsultView />;
+  }
+
+  // ── Guest / Free: Free consult booking flow ───────────────────────────────
+  return <FreeConsultFlow />;
+}
+
+/* ─── Premium Consultation View ──────────────────────────────────────────── */
+
+function PremiumConsultView() {
+  const router = useRouter();
+  const { accent } = useAccess();
+
+  // Placeholder sessions -- in production from a useConsultations() hook
+  const isLoading = false;
+  const sessions: ConsultSession[] = [
+    {
+      id: '1',
+      stylistName: 'Aisha Patel',
+      date: '30 Mar 2026',
+      time: '10:00 AM',
+      type: 'paid',
+      status: 'upcoming',
+    },
+    {
+      id: '2',
+      stylistName: 'Aisha Patel',
+      date: '20 Mar 2026',
+      time: '2:00 PM',
+      type: 'paid',
+      status: 'past',
+    },
+  ];
+
+  const upcoming = sessions.filter((s) => s.status === 'upcoming');
+  const past = sessions.filter((s) => s.status === 'past');
+
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
+      <ScrollView
+        contentContainerStyle={styles.premiumContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.premiumHeader}>
+          <Text style={styles.premiumHeaderTitle}>My Consultations</Text>
+          <TouchableOpacity
+            style={[styles.bookBtn, { backgroundColor: accent }]}
+            onPress={() => router.push('/screens/consult/book-session' as any)}
+            accessibilityLabel="Book new session"
+            accessibilityRole="button"
+            testID="book-session-btn"
+          >
+            <Icon name="plus" size={16} color={T.white} />
+            <Text style={styles.bookBtnText}>Book Session</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Upcoming sessions */}
+        <Text style={styles.sectionTitle}>Upcoming</Text>
+        {isLoading ? (
+          <ActivityIndicator color={accent} style={{ marginVertical: 20 }} />
+        ) : upcoming.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Icon name="calendar" size={32} color={T.muted} />
+            <Text style={styles.emptyText}>No upcoming sessions</Text>
+          </View>
+        ) : (
+          upcoming.map((session) => (
+            <ConsultCard
+              key={session.id}
+              session={session}
+              onPress={() =>
+                router.push(`/screens/consult/detail?sessionId=${session.id}` as any)
+              }
+              style={{ marginBottom: 10 }}
+              testID={`consult-card-${session.id}`}
+            />
+          ))
+        )}
+
+        {/* Past sessions */}
+        {past.length > 0 && (
+          <>
+            <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Recent</Text>
+            {past.map((session) => (
+              <ConsultCard
+                key={session.id}
+                session={session}
+                onPress={() =>
+                  router.push(`/screens/session/complete?sessionId=${session.id}` as any)
+                }
+                style={{ marginBottom: 10 }}
+                testID={`consult-past-${session.id}`}
+              />
+            ))}
+          </>
+        )}
+
+        {/* Session history link */}
+        <TouchableOpacity
+          style={styles.historyLink}
+          onPress={() => router.push('/screens/session/history' as any)}
+          accessibilityLabel="View all session history"
+          accessibilityRole="button"
+        >
+          <Text style={[styles.historyLinkText, { color: accent }]}>
+            View Full History
+          </Text>
+          <Icon name="chevronRight" size={16} color={accent} />
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+/* ─── Free Consult Booking Flow ──────────────────────────────────────────── */
+
+function FreeConsultFlow() {
+  const router = useRouter();
+  const { accent, isFree, showUpgradePrompts } = useAccess();
+
   const [step, setStep] = useState<ConsultStep>('landing');
   const [form, setForm] = useState<FormData>({
     name: '',
@@ -64,8 +208,8 @@ export default function ConsultTab() {
   const [confirmedName, setConfirmedName] = useState('');
 
   const setField = <K extends keyof FormData>(key: K, val: FormData[K]) => {
-    setForm(p => ({ ...p, [key]: val }));
-    setErrors(p => ({ ...p, [key]: '' }));
+    setForm((p) => ({ ...p, [key]: val }));
+    setErrors((p) => ({ ...p, [key]: '' }));
   };
 
   const validate = (): boolean => {
@@ -73,7 +217,8 @@ export default function ConsultTab() {
     if (!form.name.trim()) errs.name = 'Name is required';
     if (!form.phone.trim()) errs.phone = 'Phone is required';
     if (!form.email.trim()) errs.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Enter a valid email';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      errs.email = 'Enter a valid email';
     if (!form.weddingDate.trim()) errs.weddingDate = 'Wedding date is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -116,7 +261,7 @@ export default function ConsultTab() {
         budget: 'not_specified',
       });
     } catch {
-      // Non-blocking — show confirmation regardless
+      // Non-blocking
     } finally {
       setBookingLoading(false);
     }
@@ -124,54 +269,73 @@ export default function ConsultTab() {
     setStep('confirmed');
   };
 
-  // ─── Landing ────────────────────────────────────────────────────────────────
+  // ─── Landing ──────────────────────────────────────────────────────────────
   if (step === 'landing') {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
         <View style={styles.landingContainer}>
-          {/* Eyebrow */}
           <Text style={styles.landingEyebrow}>EDITORIAL BRIDAL</Text>
           <Text style={styles.landingTitle}>My Consultations</Text>
           <Text style={styles.landingSubtitle}>
-            Curating your vintage look with a dedicated stylist — no account needed.
+            Curating your vintage look with a dedicated stylist.
           </Text>
 
           <TouchableOpacity
             testID="book-free-session-button-header"
-            style={styles.bookSessionBtn}
+            style={[styles.bookSessionBtn, { backgroundColor: accent }]}
             onPress={() => setStep('form')}
           >
             <Text style={styles.bookSessionBtnText}>+ Book New Session</Text>
           </TouchableOpacity>
 
           <View style={styles.featureList}>
-            {['30-minute video call', 'Expert styling advice', 'Completely free'].map(f => (
-              <View key={f} style={styles.featureRow}>
-                <View style={styles.featureCheck}>
-                  <Text style={styles.featureCheckText}>✓</Text>
+            {['30-minute video call', 'Expert styling advice', 'Completely free'].map(
+              (f) => (
+                <View key={f} style={styles.featureRow}>
+                  <View style={[styles.featureCheck, { backgroundColor: T.success }]}>
+                    <Icon name="check" size={13} color={T.white} />
+                  </View>
+                  <Text style={styles.featureText}>{f}</Text>
                 </View>
-                <Text style={styles.featureText}>{f}</Text>
-              </View>
-            ))}
+              ),
+            )}
           </View>
 
           <Button
             testID="book-free-session-button"
             title="Book My Free Session"
             onPress={() => setStep('form')}
-            color={Colors.premium.primary}
+            variant="primary"
+            fullWidth
             size="lg"
-            style={styles.ctaBtn}
           />
+
+          {/* Upgrade prompt for free users */}
+          {showUpgradePrompts && (
+            <View style={[styles.upgradeHint, { borderColor: T.sage }]}>
+              <Text style={[styles.upgradeHintText, { color: T.sage }]}>
+                Want unlimited sessions? Browse premium packages.
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/packages' as any)}
+                style={styles.upgradeLinkBtn}
+              >
+                <Text style={[styles.upgradeLinkText, { color: T.sage }]}>
+                  View Packages
+                </Text>
+                <Icon name="chevronRight" size={14} color={T.sage} />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </SafeAreaView>
     );
   }
 
-  // ─── Form ────────────────────────────────────────────────────────────────────
+  // ─── Form ─────────────────────────────────────────────────────────────────
   if (step === 'form') {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -181,10 +345,9 @@ export default function ConsultTab() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* Header */}
             <Text style={styles.formEyebrow}>EDITORIAL BRIDAL</Text>
             <Text style={styles.formTitle}>Book a Free Consultation</Text>
-            <View style={styles.formTitleDivider} />
+            <View style={[styles.formTitleDivider, { backgroundColor: accent }]} />
             <Text style={styles.formSubtitle}>
               Fill in your details and we'll match you with a stylist.
             </Text>
@@ -195,9 +358,8 @@ export default function ConsultTab() {
               placeholder="Rahul Mehta"
               autoCapitalize="words"
               value={form.name}
-              onChangeText={t => setField('name', t)}
+              onChangeText={(t) => setField('name', t)}
               error={errors.name}
-              color={Colors.premium.primary}
             />
             <Input
               testID="consult-phone"
@@ -205,9 +367,8 @@ export default function ConsultTab() {
               placeholder="+919876543210"
               keyboardType="phone-pad"
               value={form.phone}
-              onChangeText={t => setField('phone', t)}
+              onChangeText={(t) => setField('phone', t)}
               error={errors.phone}
-              color={Colors.premium.primary}
             />
             <Input
               testID="consult-email"
@@ -217,27 +378,31 @@ export default function ConsultTab() {
               autoCapitalize="none"
               autoCorrect={false}
               value={form.email}
-              onChangeText={t => setField('email', t)}
+              onChangeText={(t) => setField('email', t)}
               error={errors.email}
-              color={Colors.premium.primary}
             />
             <Input
               testID="consult-wedding-date"
               label="Wedding Date"
               placeholder="YYYY-MM-DD"
               value={form.weddingDate}
-              onChangeText={t => setField('weddingDate', t)}
+              onChangeText={(t) => setField('weddingDate', t)}
               error={errors.weddingDate}
-              color={Colors.premium.primary}
             />
 
             <Text style={styles.roleLabel}>I am the</Text>
             <View style={styles.roleRow}>
-              {WEDDING_ROLES.map(r => (
+              {WEDDING_ROLES.map((r) => (
                 <TouchableOpacity
                   key={r}
                   testID={`consult-role-${r}`}
-                  style={[styles.roleChip, form.weddingRole === r && styles.roleChipActive]}
+                  style={[
+                    styles.roleChip,
+                    form.weddingRole === r && [
+                      styles.roleChipActive,
+                      { borderColor: accent, backgroundColor: accent },
+                    ],
+                  ]}
                   onPress={() => setField('weddingRole', r)}
                   accessibilityRole="button"
                   accessibilityLabel={r.charAt(0).toUpperCase() + r.slice(1)}
@@ -258,16 +423,19 @@ export default function ConsultTab() {
               testID="consult-continue-button"
               title="Continue"
               onPress={handleContinueToSlots}
-              color={Colors.premium.primary}
+              variant="primary"
               size="lg"
-              style={{ marginTop: Spacing.md }}
+              fullWidth
+              style={{ marginTop: 16 }}
             />
             <TouchableOpacity
               testID="consult-back-button"
               style={styles.backLink}
               onPress={() => setStep('landing')}
             >
-              <Text style={styles.backLinkText}>← Back</Text>
+              <Text style={[styles.backLinkText, { color: accent }]}>
+                {'\u2190'} Back
+              </Text>
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -275,13 +443,15 @@ export default function ConsultTab() {
     );
   }
 
-  // ─── Slot Picker ─────────────────────────────────────────────────────────────
+  // ─── Slot Picker ──────────────────────────────────────────────────────────
   if (step === 'slots') {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
         <View style={styles.slotHeader}>
           <TouchableOpacity testID="slots-back-button" onPress={() => setStep('form')}>
-            <Text style={styles.slotBackText}>← Back</Text>
+            <Text style={[styles.slotBackText, { color: accent }]}>
+              {'\u2190'} Back
+            </Text>
           </TouchableOpacity>
           <Text style={styles.slotHeaderTitle}>Choose a Time Slot</Text>
           <View style={{ width: 48 }} />
@@ -289,7 +459,7 @@ export default function ConsultTab() {
 
         {slotsLoading ? (
           <View style={styles.center}>
-            <ActivityIndicator color={Colors.premium.primary} />
+            <ActivityIndicator color={accent} />
           </View>
         ) : (
           <ScrollView
@@ -303,7 +473,10 @@ export default function ConsultTab() {
                 accessibilityLabel={`${slot.date} ${slot.label}`}
                 style={[
                   styles.slotCard,
-                  selectedSlot === slot.id && styles.slotCardSelected,
+                  selectedSlot === slot.id && [
+                    styles.slotCardSelected,
+                    { borderColor: accent },
+                  ],
                   !slot.available && styles.slotCardDisabled,
                 ]}
                 onPress={() => slot.available && setSelectedSlot(slot.id)}
@@ -316,13 +489,17 @@ export default function ConsultTab() {
                 <View
                   style={[
                     styles.slotBadge,
-                    slot.available ? styles.slotBadgeAvailable : styles.slotBadgeFull,
+                    {
+                      backgroundColor: slot.available
+                        ? T.successLight
+                        : T.errorLight,
+                    },
                   ]}
                 >
                   <Text
                     style={[
                       styles.slotBadgeText,
-                      { color: slot.available ? Colors.success : Colors.error },
+                      { color: slot.available ? T.success : T.rose },
                     ]}
                   >
                     {slot.available ? 'Available' : 'Full'}
@@ -339,8 +516,9 @@ export default function ConsultTab() {
             title="Confirm Booking"
             onPress={handleConfirmBooking}
             loading={bookingLoading}
-            color={Colors.premium.primary}
+            variant="primary"
             size="lg"
+            fullWidth
             disabled={!selectedSlot}
           />
         </View>
@@ -348,17 +526,21 @@ export default function ConsultTab() {
     );
   }
 
-  // ─── Confirmed ───────────────────────────────────────────────────────────────
+  // ─── Confirmed ────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
       <View style={styles.confirmedContainer}>
-        <View style={styles.checkCircle}>
-          <Text style={styles.checkIcon}>✓</Text>
+        <View style={[styles.checkCircle, { backgroundColor: T.success }]}>
+          <Icon name="check" size={32} color={T.white} />
         </View>
-        <Text style={styles.confirmedEyebrow}>SESSION CONFIRMED</Text>
+        <Text style={[styles.confirmedEyebrow, { color: accent }]}>
+          SESSION CONFIRMED
+        </Text>
         <Text style={styles.confirmedTitle}>Booking Confirmed</Text>
-        <View style={styles.confirmedDivider} />
-        <Text style={styles.confirmedName}>{confirmedName}</Text>
+        <View style={[styles.confirmedDivider, { backgroundColor: accent }]} />
+        <Text style={[styles.confirmedName, { color: accent }]}>
+          {confirmedName}
+        </Text>
         <Text style={styles.confirmedSub}>
           We'll send you the Google Meet link before your session.
         </Text>
@@ -367,13 +549,18 @@ export default function ConsultTab() {
           title="Book Another Session"
           onPress={() => {
             setStep('landing');
-            setForm({ name: '', phone: '', email: '', weddingDate: '', weddingRole: 'bride' });
+            setForm({
+              name: '',
+              phone: '',
+              email: '',
+              weddingDate: '',
+              weddingRole: 'bride',
+            });
             setErrors({});
             setSelectedSlot(null);
           }}
           variant="outline"
-          color={Colors.premium.primary}
-          style={{ marginTop: Spacing.xl }}
+          style={{ marginTop: 24 }}
         />
       </View>
     </SafeAreaView>
@@ -381,138 +568,234 @@ export default function ConsultTab() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.premium.background },
+  safe: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+
+  // Premium view
+  premiumContent: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  premiumHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  premiumHeaderTitle: {
+    fontSize: 22,
+    fontFamily: F.serif,
+    fontWeight: '700',
+    color: T.heading,
+  },
+  bookBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+    gap: 6,
+    ...SHADOW.card,
+  },
+  bookBtnText: {
+    fontSize: 13,
+    fontFamily: F.sans,
+    fontWeight: '600',
+    color: T.white,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontFamily: F.serif,
+    fontWeight: '600',
+    color: T.heading,
+    marginBottom: 10,
+  },
+  emptyCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: T.cardBg,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: T.border,
+    padding: 24,
+    gap: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    fontFamily: F.sans,
+    color: T.body,
+  },
+  historyLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    marginTop: 16,
+    gap: 4,
+  },
+  historyLinkText: {
+    fontSize: 14,
+    fontFamily: F.sans,
+    fontWeight: '600',
+  },
 
   // Landing
   landingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: 24,
   },
   landingEyebrow: {
     fontSize: 11,
+    fontFamily: F.sans,
     fontWeight: '700',
     letterSpacing: 2,
-    color: Colors.premium.textMuted,
+    color: T.dim,
     textTransform: 'uppercase',
-    marginBottom: Spacing.sm,
+    marginBottom: 8,
   },
   landingTitle: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: Colors.premium.text,
+    fontSize: 28,
+    fontFamily: F.serif,
+    fontWeight: '700',
+    color: T.heading,
     textAlign: 'center',
-    marginBottom: Spacing.sm,
-    letterSpacing: 0.2,
+    marginBottom: 8,
   },
   landingSubtitle: {
     fontSize: 14,
-    color: Colors.premium.textSecondary,
+    fontFamily: F.sans,
+    color: T.body,
     textAlign: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: 20,
     lineHeight: 22,
   },
   bookSessionBtn: {
-    backgroundColor: Colors.premium.primary,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    marginBottom: Spacing.xl,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginBottom: 24,
   },
   bookSessionBtnText: {
-    color: '#FFF',
+    color: T.white,
     fontSize: 14,
+    fontFamily: F.sans,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-  featureList: { width: '100%', marginBottom: Spacing.xl },
+  featureList: { width: '100%', marginBottom: 24 },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: 8,
   },
   featureCheck: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: Colors.premium.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.sm,
+    marginRight: 10,
   },
-  featureCheckText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
   featureText: {
     fontSize: 15,
-    color: Colors.premium.textSecondary,
+    fontFamily: F.sans,
+    color: T.body,
     fontWeight: '500',
   },
-  ctaBtn: { width: '100%' },
+  upgradeHint: {
+    marginTop: 20,
+    borderWidth: 1,
+    borderRadius: RADIUS.lg,
+    padding: 14,
+    alignItems: 'center',
+    width: '100%',
+  },
+  upgradeHintText: {
+    fontSize: 13,
+    fontFamily: F.sans,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  upgradeLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
+    gap: 4,
+  },
+  upgradeLinkText: {
+    fontSize: 14,
+    fontFamily: F.sans,
+    fontWeight: '600',
+  },
 
   // Form
-  formContent: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xl },
+  formContent: { paddingHorizontal: 16, paddingVertical: 24 },
   formEyebrow: {
     fontSize: 11,
+    fontFamily: F.sans,
     fontWeight: '700',
     letterSpacing: 2,
-    color: Colors.premium.textMuted,
+    color: T.dim,
     textTransform: 'uppercase',
     marginBottom: 6,
   },
   formTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: Colors.premium.text,
+    fontSize: 22,
+    fontFamily: F.serif,
+    fontWeight: '700',
+    color: T.heading,
     marginBottom: 8,
   },
   formTitleDivider: {
     width: 32,
     height: 2,
-    backgroundColor: Colors.premium.primary,
     borderRadius: 1,
-    marginBottom: Spacing.sm,
+    marginBottom: 8,
   },
   formSubtitle: {
     fontSize: 14,
-    color: Colors.premium.textSecondary,
-    marginBottom: Spacing.lg,
+    fontFamily: F.sans,
+    color: T.body,
+    marginBottom: 20,
     lineHeight: 22,
   },
   roleLabel: {
     fontSize: 13,
-    color: Colors.premium.textSecondary,
-    marginBottom: Spacing.sm,
+    fontFamily: F.sans,
+    color: T.body,
+    marginBottom: 8,
     fontWeight: '500',
   },
-  roleRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.md },
+  roleRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   roleChip: {
     flex: 1,
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.premium.border,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.premium.surfaceWarm,
+    borderColor: T.border,
+    borderRadius: RADIUS.md,
+    backgroundColor: T.cardBg,
   },
-  roleChipActive: {
-    borderColor: Colors.premium.primary,
-    backgroundColor: Colors.premium.primary,
-  },
+  roleChipActive: {},
   roleChipText: {
-    ...Typography.button,
-    color: Colors.premium.textSecondary,
+    fontSize: 14,
+    fontFamily: F.sans,
+    fontWeight: '600',
+    color: T.body,
   },
-  roleChipTextActive: { color: '#fff' },
+  roleChipTextActive: { color: T.white },
   backLink: {
     alignItems: 'center',
-    paddingVertical: Spacing.md,
-    marginTop: Spacing.sm,
+    paddingVertical: 12,
+    marginTop: 8,
   },
   backLinkText: {
-    color: Colors.premium.primary,
     fontSize: 14,
+    fontFamily: F.sans,
     fontWeight: '600',
   },
 
@@ -521,62 +804,62 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.premium.border,
-    backgroundColor: Colors.premium.surface,
+    borderBottomColor: T.border,
+    backgroundColor: T.cardBg,
   },
   slotBackText: {
-    color: Colors.premium.primary,
+    fontFamily: F.sans,
     fontWeight: '600',
     fontSize: 14,
   },
   slotHeaderTitle: {
     fontSize: 17,
+    fontFamily: F.serif,
     fontWeight: '700',
-    color: Colors.premium.text,
+    color: T.heading,
   },
-  slotList: { padding: Spacing.lg, gap: Spacing.md },
+  slotList: { padding: 16, gap: 10 },
   slotCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.premium.surfaceWarm,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    backgroundColor: T.cardBg,
+    borderRadius: RADIUS.md,
+    padding: 14,
     borderWidth: 1.5,
-    borderColor: Colors.premium.border,
+    borderColor: T.border,
   },
   slotCardSelected: {
-    borderColor: Colors.premium.primary,
-    backgroundColor: Colors.premium.backgroundDeep,
+    backgroundColor: T.s1,
   },
   slotCardDisabled: { opacity: 0.5 },
   slotInfo: { flex: 1 },
   slotLabel: {
     fontSize: 15,
+    fontFamily: F.sans,
     fontWeight: '600',
-    color: Colors.premium.text,
+    color: T.heading,
     marginBottom: 2,
   },
   slotDate: {
     fontSize: 13,
-    color: Colors.premium.textMuted,
+    fontFamily: F.sans,
+    color: T.dim,
   },
   slotBadge: {
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: BorderRadius.sm,
+    borderRadius: RADIUS.sm,
   },
-  slotBadgeAvailable: { backgroundColor: '#e6f9f0' },
-  slotBadgeFull: { backgroundColor: '#fdecea' },
-  slotBadgeText: { fontSize: 12, fontWeight: '600' },
+  slotBadgeText: { fontSize: 12, fontFamily: F.sans, fontWeight: '600' },
   slotFooter: {
-    padding: Spacing.lg,
-    backgroundColor: Colors.premium.surface,
+    padding: 16,
+    backgroundColor: T.cardBg,
     borderTopWidth: 1,
-    borderTopColor: Colors.premium.border,
+    borderTopColor: T.border,
   },
 
   // Confirmed
@@ -584,54 +867,49 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: 24,
   },
   checkCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.premium.primary,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.lg,
-    shadowColor: Colors.premium.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    marginBottom: 16,
+    ...SHADOW.md,
   },
-  checkIcon: { color: '#fff', fontSize: 36, fontWeight: '700' },
   confirmedEyebrow: {
     fontSize: 11,
+    fontFamily: F.sans,
     fontWeight: '700',
     letterSpacing: 2,
-    color: Colors.premium.primary,
     textTransform: 'uppercase',
     marginBottom: 6,
   },
   confirmedTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: Colors.premium.text,
+    fontSize: 24,
+    fontFamily: F.serif,
+    fontWeight: '700',
+    color: T.heading,
     textAlign: 'center',
     marginBottom: 8,
   },
   confirmedDivider: {
     width: 32,
     height: 2,
-    backgroundColor: Colors.premium.primary,
     borderRadius: 1,
-    marginBottom: Spacing.md,
+    marginBottom: 12,
   },
   confirmedName: {
     fontSize: 18,
+    fontFamily: F.serif,
     fontWeight: '700',
-    color: Colors.premium.primary,
-    marginBottom: Spacing.md,
+    marginBottom: 12,
   },
   confirmedSub: {
     fontSize: 14,
-    color: Colors.premium.textSecondary,
+    fontFamily: F.sans,
+    color: T.body,
     textAlign: 'center',
     lineHeight: 22,
   },

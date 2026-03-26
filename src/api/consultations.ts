@@ -1,6 +1,10 @@
 import { api } from '../lib/api';
 
 export const consultationsApi = {
+  /** GET /consultations — list user's consultations */
+  list: () =>
+    api.get<{ consultations: any[] }>('/consultations'),
+
   getSlots: (stylistId: string, date: string) =>
     api.get('/consultations/slots', { params: { stylistId, date } }),
 

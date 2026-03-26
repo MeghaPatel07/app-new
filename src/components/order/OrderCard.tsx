@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
-import type { RoleTheme } from '../../theme';
+import { T, SHADOW, RADIUS } from '../../constants/tokens';
+import { Typography, Spacing } from '../../theme';
+import { ROLE_ACCENT, type UserRole } from '../../constants/roles';
 import type { OrderStatus } from './StatusTimeline';
 import { STATUS_LABELS, EXCEPTION_STATUSES } from './StatusTimeline';
 
@@ -11,7 +12,7 @@ interface OrderCardProps {
   itemCount: number;
   total: number;
   status: OrderStatus;
-  role?: RoleTheme;
+  role?: UserRole;
   onPress?: () => void;
   testID?: string;
 }
@@ -22,18 +23,18 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   itemCount,
   total,
   status,
-  role = 'client',
+  role = 'free',
   onPress,
   testID,
 }) => {
-  const primaryColor = Colors[role].primary;
+  const primaryColor = ROLE_ACCENT[role];
   const isException  = EXCEPTION_STATUSES.includes(status);
-  const statusColor  = isException ? Colors.error : status === 'delivered' ? Colors.success : primaryColor;
+  const statusColor  = isException ? T.rose : status === 'delivered' ? T.success : primaryColor;
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} testID={testID} disabled={!onPress}>
       <View style={styles.row}>
-        <Text style={[Typography.body2, { fontWeight: '600', color: Colors.gray900 }]}>
+        <Text style={[Typography.body2, { fontWeight: '600', color: T.ink }]}>
           #{orderId}
         </Text>
         <View style={[styles.badge, { backgroundColor: statusColor + '22' }]}>
@@ -44,12 +45,12 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       </View>
 
       <View style={[styles.row, { marginTop: Spacing.xs }]}>
-        <Text style={[Typography.caption, { color: Colors.gray500 }]}>{date}</Text>
-        <Text style={[Typography.caption, { color: Colors.gray500 }]}>
+        <Text style={[Typography.caption, { color: T.dim }]}>{date}</Text>
+        <Text style={[Typography.caption, { color: T.dim }]}>
           {itemCount} {itemCount === 1 ? 'item' : 'items'}
         </Text>
         <Text style={[Typography.body2, { fontWeight: '700', color: primaryColor }]}>
-          ₹{total.toLocaleString()}
+          {'\u20B9'}{total.toLocaleString()}
         </Text>
       </View>
     </TouchableOpacity>
@@ -58,15 +59,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFF',
-    borderRadius: BorderRadius.lg,
+    backgroundColor: T.cardBg,
+    borderRadius: RADIUS.lg,
     padding: Spacing.md,
     marginVertical: Spacing.xs,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 2,
+    ...SHADOW.card,
   },
   row: {
     flexDirection: 'row',
@@ -74,7 +71,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   badge: {
-    borderRadius: BorderRadius.full,
+    borderRadius: RADIUS.full,
     paddingVertical: 2,
     paddingHorizontal: Spacing.xs,
   },

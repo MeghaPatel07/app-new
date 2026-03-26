@@ -1,4 +1,4 @@
-appId: com.weddingease.app
+appId: weddingease.serviceapp
 name: "Role Access Guard - EaseBot locked for free users"
 ---
 - launchApp

@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Colors, Typography, Spacing } from '../../theme';
-import type { RoleTheme } from '../../theme';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { T, RADIUS } from '../../constants/tokens';
+import { Typography, Spacing } from '../../theme';
+import { ROLE_ACCENT, type UserRole } from '../../constants/roles';
 import {
   type OrderStatus,
   STATUS_CFG,
   STATUS_FLOW,
-  getStatusIndex,
   isCompleted as isCompletedFn,
   isActive as isActiveFn,
 } from '../../utils/orderStatus';
@@ -22,22 +22,33 @@ export const STATUS_LABELS: Record<OrderStatus, string> = Object.fromEntries(
 
 interface StatusTimelineProps {
   currentStatus: OrderStatus;
-  role?: RoleTheme;
+  role?: UserRole;
+  /** Show advance / controls panel (stylist only) */
+  showControls?: boolean;
+  onAdvance?: (nextStatus: OrderStatus) => void;
   testID?: string;
 }
 
 export const StatusTimeline: React.FC<StatusTimelineProps> = ({
   currentStatus,
-  role = 'client',
+  role = 'free',
+  showControls = false,
+  onAdvance,
   testID,
 }) => {
-  const primaryColor = Colors[role].primary;
+  const primaryColor = ROLE_ACCENT[role];
   const isException = EXCEPTION_STATUSES.includes(currentStatus);
 
   // Show normal flow + append exception status at end if applicable
   const steps: OrderStatus[] = isException
     ? [...STATUS_FLOW, currentStatus]
     : STATUS_FLOW;
+
+  // Determine next status for stylist controls
+  const currentIndex = STATUS_FLOW.indexOf(currentStatus);
+  const nextStatus = currentIndex >= 0 && currentIndex < STATUS_FLOW.length - 1
+    ? STATUS_FLOW[currentIndex + 1]
+    : null;
 
   return (
     <ScrollView style={styles.container} testID={testID}>
@@ -48,18 +59,18 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({
         const future     = !isException && !completed && !active;
 
         const dotColor = isExStep
-          ? Colors.error
+          ? T.rose
           : completed || active
           ? primaryColor
-          : Colors.gray300;
+          : T.border;
 
         const labelColor = isExStep
-          ? Colors.error
+          ? T.rose
           : active
           ? primaryColor
           : future
-          ? Colors.gray400
-          : Colors.gray700;
+          ? T.muted
+          : T.heading;
 
         return (
           <View key={status} style={styles.step}>
@@ -67,7 +78,7 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({
               <View
                 style={[
                   styles.connector,
-                  { backgroundColor: completed || active ? primaryColor : Colors.gray200 },
+                  { backgroundColor: completed || active ? primaryColor : T.s3 },
                 ]}
               />
             )}
@@ -75,10 +86,10 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({
               <View
                 style={[
                   styles.dot,
-                  { borderColor: dotColor, backgroundColor: active || completed ? dotColor : '#FFF' },
+                  { borderColor: dotColor, backgroundColor: active || completed ? dotColor : T.cardBg },
                 ]}
               >
-                {completed && <Text style={styles.check}>✓</Text>}
+                {completed && <Text style={styles.check}>{'\u2713'}</Text>}
               </View>
               <View style={{ flex: 1, marginLeft: Spacing.sm }}>
                 <Text
@@ -90,7 +101,7 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({
                   {STATUS_CFG[status].label}
                 </Text>
                 {active && (
-                  <Text style={[Typography.caption, { color: Colors.gray500 }]}>
+                  <Text style={[Typography.caption, { color: T.dim }]}>
                     {STATUS_CFG[status].description}
                   </Text>
                 )}
@@ -99,6 +110,19 @@ export const StatusTimeline: React.FC<StatusTimelineProps> = ({
           </View>
         );
       })}
+
+      {/* Stylist controls */}
+      {showControls && nextStatus && onAdvance && (
+        <TouchableOpacity
+          style={[styles.advanceBtn, { backgroundColor: primaryColor }]}
+          onPress={() => onAdvance(nextStatus)}
+          testID="advance-status-btn"
+        >
+          <Text style={[Typography.button, { color: T.white }]}>
+            Advance to {STATUS_CFG[nextStatus].label}
+          </Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };
@@ -118,5 +142,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  check: { color: '#FFF', fontSize: 11, fontWeight: '700' },
+  check: { color: T.white, fontSize: 11, fontWeight: '700' },
+  advanceBtn: {
+    marginTop: Spacing.md,
+    borderRadius: RADIUS.md,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+  },
 });

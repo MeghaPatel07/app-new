@@ -10,19 +10,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useOrders } from '../hooks/useOrders';
-import { useAuthStore } from '../store/authStore';
+import { useAccess } from '../hooks/useAccess';
 import { OrderCard } from '../components/order/OrderCard';
 import type { OrderStatus } from '../components/order/StatusTimeline';
-import { Colors } from '../theme/colors';
+import { T } from '../constants/tokens';
 import { Typography } from '../theme/typography';
 import { Spacing } from '../theme/spacing';
 
 export default function OrderListScreen() {
   const router = useRouter();
-  const { role } = useAuthStore();
+  const { role, accent } = useAccess();
   const { orders, isLoading, error } = useOrders();
-
-  const theme = Colors[role === 'stylist' ? 'stylist' : 'client'];
 
   const formatDate = (createdAt: any): string => {
     if (!createdAt) return '—';
@@ -31,22 +29,22 @@ export default function OrderListScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
       <View style={styles.header}>
         <TouchableOpacity testID="back-button" onPress={() => router.back()}>
-          <Text style={{ color: theme.primary, fontSize: 16, fontWeight: '600' }}>← Back</Text>
+          <Text style={{ color: accent, fontSize: 16, fontWeight: '600' }}>← Back</Text>
         </TouchableOpacity>
-        <Text style={[Typography.h3, { color: theme.text }]}>My Orders</Text>
+        <Text style={[Typography.h3, { color: T.heading }]}>My Orders</Text>
         <View style={{ width: 48 }} />
       </View>
 
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={theme.primary} />
+          <ActivityIndicator size="large" color={accent} />
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Text style={{ color: Colors.error }}>Could not load orders.</Text>
+          <Text style={{ color: T.rose }}>Could not load orders.</Text>
         </View>
       ) : (
         <FlatList
@@ -62,13 +60,13 @@ export default function OrderListScreen() {
               itemCount={item.items?.length ?? 0}
               total={item.total ?? 0}
               status={(item.status ?? 'payed') as OrderStatus}
-              role={role === 'stylist' ? 'stylist' : 'client'}
+              role={role}
               onPress={() => router.push(`/order/${item.id}`)}
             />
           )}
           ListEmptyComponent={
             <View style={styles.center}>
-              <Text style={[Typography.body1, { color: Colors.gray500 }]}>No orders yet.</Text>
+              <Text style={[Typography.body1, { color: T.gray500 }]}>No orders yet.</Text>
             </View>
           }
         />

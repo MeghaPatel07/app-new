@@ -14,11 +14,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
 import { firebaseAuth } from '../../firebase/auth';
-import { Colors } from '../../theme/colors';
+import { T } from '../../constants/tokens';
+import { ROLE_ACCENT } from '../../constants/roles';
 import { Typography } from '../../theme/typography';
 import { Spacing, BorderRadius } from '../../theme/spacing';
 
-const theme = Colors.guest;
+const guestAccent = ROLE_ACCENT.guest;
 
 type Step = 'phone' | 'otp';
 
@@ -107,7 +108,7 @@ export default function OTPScreen() {
               testID="input-phone"
               style={[styles.input, phoneError ? styles.inputError : null]}
               placeholder="+919876543210"
-              placeholderTextColor={Colors.gray400}
+              placeholderTextColor={T.gray400}
               keyboardType="phone-pad"
               value={phone}
               onChangeText={text => {
@@ -126,7 +127,7 @@ export default function OTPScreen() {
               accessibilityLabel="Send OTP"
             >
               {loading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={T.white} />
               ) : (
                 <Text style={styles.primaryBtnText}>Send OTP</Text>
               )}
@@ -138,7 +139,7 @@ export default function OTPScreen() {
               testID="input-otp"
               style={[styles.input, otpError ? styles.inputError : null]}
               placeholder="6-digit OTP"
-              placeholderTextColor={Colors.gray400}
+              placeholderTextColor={T.gray400}
               keyboardType="number-pad"
               maxLength={6}
               value={otp}
@@ -158,7 +159,7 @@ export default function OTPScreen() {
               accessibilityLabel="Verify OTP"
             >
               {loading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={T.white} />
               ) : (
                 <Text style={styles.primaryBtnText}>Verify OTP</Text>
               )}
@@ -192,49 +193,49 @@ export default function OTPScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.background },
+  safe: { flex: 1, backgroundColor: T.bg },
   container: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
     justifyContent: 'center',
   },
   header: { marginBottom: Spacing.xl, alignItems: 'center' },
-  title: { ...Typography.h1, color: theme.primary, marginBottom: Spacing.xs },
-  subtitle: { ...Typography.h3, color: theme.text, textAlign: 'center' },
+  title: { ...Typography.h1, color: guestAccent, marginBottom: Spacing.xs },
+  subtitle: { ...Typography.h3, color: T.heading, textAlign: 'center' },
   hint: {
     ...Typography.body2,
-    color: Colors.gray600,
+    color: T.gray600,
     marginTop: Spacing.xs,
     textAlign: 'center',
   },
   input: {
     height: 52,
     borderWidth: 1.5,
-    borderColor: Colors.gray300,
+    borderColor: T.gray300,
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.md,
-    backgroundColor: Colors.gray50,
-    color: theme.text,
+    backgroundColor: T.gray50,
+    color: T.ink,
     fontSize: 16,
     marginBottom: Spacing.xs,
   },
-  inputError: { borderColor: Colors.error },
+  inputError: { borderColor: T.error },
   errorText: {
-    color: Colors.error,
+    color: T.error,
     fontSize: 12,
     marginBottom: Spacing.sm,
     marginLeft: Spacing.xs,
   },
   primaryBtn: {
     height: 52,
-    backgroundColor: theme.primary,
+    backgroundColor: guestAccent,
     borderRadius: BorderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: Spacing.md,
   },
   btnDisabled: { opacity: 0.7 },
-  primaryBtnText: { ...Typography.button, color: '#fff', fontSize: 16 },
+  primaryBtnText: { ...Typography.button, color: T.white, fontSize: 16 },
   linkBtn: { alignItems: 'center', paddingVertical: Spacing.md, marginTop: Spacing.sm },
-  linkText: { color: theme.primary, fontSize: 14, fontWeight: '600' },
+  linkText: { color: guestAccent, fontSize: 14, fontWeight: '600' },
 });

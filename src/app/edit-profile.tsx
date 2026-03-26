@@ -21,15 +21,15 @@ import { uploadFile } from '../firebase/storage';
 import { useAuthStore } from '../store/authStore';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
-import { Colors } from '../theme/colors';
+import { useAccess } from '../hooks/useAccess';
+import { T } from '../constants/tokens';
 import { Typography } from '../theme/typography';
 import { Spacing, BorderRadius } from '../theme/spacing';
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const { profile, setProfile, role } = useAuthStore();
-
-  const theme = Colors[role === 'stylist' ? 'stylist' : role === 'client' ? 'client' : 'guest'];
+  const { profile, setProfile } = useAuthStore();
+  const { accent } = useAccess();
 
   const [name, setName] = useState(profile?.name ?? '');
   const [phone, setPhone] = useState(profile?.phone ?? '');
@@ -98,7 +98,7 @@ export default function EditProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -115,9 +115,9 @@ export default function EditProfileScreen() {
               onPress={() => router.back()}
               accessibilityRole="button"
             >
-              <Text style={[styles.backBtn, { color: theme.primary }]}>← Back</Text>
+              <Text style={[styles.backBtn, { color: accent }]}>← Back</Text>
             </TouchableOpacity>
-            <Text style={[Typography.h3, { color: theme.text }]}>Edit Profile</Text>
+            <Text style={[Typography.h3, { color: T.heading }]}>Edit Profile</Text>
             <View style={{ width: 48 }} />
           </View>
 
@@ -133,10 +133,10 @@ export default function EditProfileScreen() {
               {photoURI ? (
                 <Image
                   source={{ uri: photoURI }}
-                  style={[styles.avatar, { borderColor: theme.primary }]}
+                  style={[styles.avatar, { borderColor: accent }]}
                 />
               ) : (
-                <View style={[styles.avatarPlaceholder, { backgroundColor: theme.primary }]}>
+                <View style={[styles.avatarPlaceholder, { backgroundColor: accent }]}>
                   <Text style={styles.avatarInitial}>
                     {name.charAt(0).toUpperCase() || '?'}
                   </Text>
@@ -144,11 +144,11 @@ export default function EditProfileScreen() {
               )}
               {uploading && (
                 <View style={styles.uploadOverlay}>
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={T.white} />
                 </View>
               )}
             </TouchableOpacity>
-            <Text style={[styles.changePhotoText, { color: theme.primary }]}>
+            <Text style={[styles.changePhotoText, { color: accent }]}>
               Change Photo
             </Text>
           </View>
@@ -159,7 +159,7 @@ export default function EditProfileScreen() {
             value={name}
             onChangeText={t => { setName(t); setErrors(p => ({ ...p, name: '' })); }}
             error={errors.name}
-            color={theme.primary}
+            color={accent}
           />
           <Input
             testID="input-phone"
@@ -168,7 +168,7 @@ export default function EditProfileScreen() {
             value={phone}
             onChangeText={t => { setPhone(t); setErrors(p => ({ ...p, phone: '' })); }}
             error={errors.phone}
-            color={theme.primary}
+            color={accent}
           />
           <Input
             testID="input-wedding-date"
@@ -176,7 +176,7 @@ export default function EditProfileScreen() {
             placeholder="YYYY-MM-DD"
             value={weddingDate}
             onChangeText={setWeddingDate}
-            color={theme.primary}
+            color={accent}
           />
 
           <Button
@@ -184,7 +184,7 @@ export default function EditProfileScreen() {
             title="Save Changes"
             onPress={handleSave}
             loading={saving}
-            color={theme.primary}
+            color={accent}
             size="lg"
             style={{ marginTop: Spacing.md }}
           />
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarInitial: { fontSize: 40, fontWeight: '700', color: '#fff' },
+  avatarInitial: { fontSize: 40, fontWeight: '700', color: T.white },
   uploadOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',

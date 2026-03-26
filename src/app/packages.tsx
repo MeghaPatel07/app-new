@@ -16,7 +16,7 @@ import { firebaseAuth } from '../firebase/auth';
 import { useAccess } from '../hooks/useAccess';
 import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui/Button';
-import { Colors } from '../theme/colors';
+import { T, SHADOW } from '../constants/tokens';
 import { Typography } from '../theme/typography';
 import { Spacing, BorderRadius } from '../theme/spacing';
 
@@ -30,13 +30,10 @@ interface PackageTier {
 
 export default function PackagesScreen() {
   const router = useRouter();
-  const { isPremium } = useAccess();
-  const { role } = useAuthStore();
+  const { isPremium, accent } = useAccess();
 
   const [packages, setPackages] = useState<PackageTier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const theme = Colors[role === 'stylist' ? 'stylist' : 'client'];
 
   useEffect(() => {
     const q = query(collection(db, 'packages'), orderBy('price', 'asc'));
@@ -108,26 +105,26 @@ export default function PackagesScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={theme.primary} />
+          <ActivityIndicator size="large" color={accent} />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity testID="back-button" onPress={() => router.back()}>
-          <Text style={{ color: theme.primary, fontSize: 16, fontWeight: '600' }}>← Back</Text>
+          <Text style={{ color: accent, fontSize: 16, fontWeight: '600' }}>← Back</Text>
         </TouchableOpacity>
-        <Text style={[Typography.h3, { color: theme.text }]}>Packages</Text>
+        <Text style={[Typography.h3, { color: T.heading }]}>Packages</Text>
         <View style={{ width: 48 }} />
       </View>
 
       {/* Current plan banner */}
       {isPremium && (
-        <View style={[styles.currentPlanBanner, { backgroundColor: Colors.premium.primary }]}>
+        <View style={[styles.currentPlanBanner, { backgroundColor: T.gold }]}>
           <Text style={styles.currentPlanText}>You are on a Premium plan</Text>
         </View>
       )}
@@ -142,27 +139,27 @@ export default function PackagesScreen() {
             testID="package-card"
             style={[
               styles.card,
-              item.highlight && { borderColor: Colors.premium.primary, borderWidth: 2 },
+              item.highlight && { borderColor: T.gold, borderWidth: 2 },
             ]}
           >
             {item.highlight && (
-              <View style={[styles.badgeContainer, { backgroundColor: Colors.premium.primary }]}>
+              <View style={[styles.badgeContainer, { backgroundColor: T.gold }]}>
                 <Text style={styles.badgeText}>Most Popular</Text>
               </View>
             )}
 
-            <Text style={[Typography.h3, { color: theme.text, marginBottom: Spacing.xs }]}>
+            <Text style={[Typography.h3, { color: T.heading, marginBottom: Spacing.xs }]}>
               {item.name}
             </Text>
-            <Text style={[styles.price, { color: theme.primary }]}>
+            <Text style={[styles.price, { color: accent }]}>
               ₹{item.price.toLocaleString()}
             </Text>
 
             <View style={styles.featureList}>
               {(item.features ?? []).map((feature, idx) => (
                 <View key={idx} style={styles.featureRow}>
-                  <Text style={[styles.featureTick, { color: Colors.success }]}>✓</Text>
-                  <Text style={[Typography.body2, { color: Colors.gray700, flex: 1 }]}>
+                  <Text style={[styles.featureTick, { color: T.success }]}>✓</Text>
+                  <Text style={[Typography.body2, { color: T.gray700, flex: 1 }]}>
                     {feature}
                   </Text>
                 </View>
@@ -173,7 +170,7 @@ export default function PackagesScreen() {
               testID="buy-now-button"
               title={isPremium ? 'Already Active' : 'Buy Now'}
               onPress={() => !isPremium && handleBuyNow(item)}
-              color={isPremium ? Colors.gray400 : theme.primary}
+              color={isPremium ? T.gray400 : accent}
               size="lg"
               style={{ marginTop: Spacing.md }}
             />
@@ -181,7 +178,7 @@ export default function PackagesScreen() {
         )}
         ListEmptyComponent={
           <View style={styles.center}>
-            <Text style={[Typography.body1, { color: Colors.gray500 }]}>
+            <Text style={[Typography.body1, { color: T.gray500 }]}>
               No packages available right now.
             </Text>
           </View>
@@ -235,20 +232,16 @@ const styles = StyleSheet.create({
     padding: Spacing.sm,
     alignItems: 'center',
   },
-  currentPlanText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  currentPlanText: { color: T.white, fontWeight: '700', fontSize: 14 },
   list: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: T.white,
     borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.gray200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: T.gray200,
+    ...SHADOW.sm,
   },
   badgeContainer: {
     alignSelf: 'flex-start',
@@ -257,7 +250,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     marginBottom: Spacing.sm,
   },
-  badgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  badgeText: { color: T.white, fontSize: 11, fontWeight: '700' },
   price: { fontSize: 28, fontWeight: '800', marginBottom: Spacing.md },
   featureList: { gap: Spacing.xs },
   featureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.xs },

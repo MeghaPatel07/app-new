@@ -8,23 +8,30 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import { firebaseAuth } from '../../firebase/auth';
+import { AppShell } from '../../components/layout/AppShell';
+import { ScreenHeader } from '../../components/layout/ScreenHeader';
+import { RoleBadge } from '../../components/shared/RoleBadge';
+import { UpgradePrompt } from '../../components/shared/UpgradePrompt';
+import { T, F, RADIUS, SHADOW } from '../../constants/tokens';
 import { useAuthStore } from '../../store/authStore';
-import { Colors } from '../../theme/colors';
-import { Typography } from '../../theme/typography';
-import { Spacing, BorderRadius } from '../../theme/spacing';
 import { useAccess } from '../../hooks/useAccess';
 
 export default function ProfileTab() {
   const router = useRouter();
-  const { profile, role } = useAuthStore();
-  const { isPremium, isStylist } = useAccess();
+  const { profile } = useAuthStore();
+  const {
+    isGuest,
+    isFree,
+    isPremium,
+    isStylist,
+    showUpgradePrompts,
+    accent,
+    role,
+  } = useAccess();
   const [loading, setLoading] = useState(false);
-
-  const theme = Colors[isStylist ? 'stylist' : isPremium ? 'premium' : 'client'];
 
   const handleSignOut = async () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -46,157 +53,391 @@ export default function ProfileTab() {
     ]);
   };
 
-  const packageBadge = isPremium ? 'Premium' : isStylist ? 'Stylist' : 'Free';
-  const badgeColor = isPremium
-    ? Colors.premium.primary
-    : isStylist
-    ? Colors.stylist.primary
-    : Colors.premium.textMuted;
-
-  return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-      <View style={styles.container}>
-        {/* Avatar */}
-        <View style={styles.avatarSection}>
-          {profile?.photoURL ? (
-            <Image
-              source={{ uri: profile.photoURL }}
-              style={[styles.avatar, { borderColor: theme.primary }]}
-            />
-          ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: theme.primary }]}>
-              <Text style={styles.avatarInitial}>
-                {profile?.name?.charAt(0).toUpperCase() ?? '?'}
-              </Text>
-            </View>
-          )}
-          <Text style={[styles.name, { color: theme.text }]}>{profile?.name ?? '—'}</Text>
-          <Text style={[styles.email, { color: Colors.premium.textSecondary }]}>{profile?.email ?? '—'}</Text>
-          <View style={[styles.badge, { backgroundColor: badgeColor }]}>
-            <Text style={styles.badgeText}>{packageBadge}</Text>
+  // ── Guest state: show Sign In CTA ──────────────────────────────────────────
+  if (isGuest) {
+    return (
+      <AppShell header={<ScreenHeader title="Profile" />}>
+        <View style={styles.guestContainer}>
+          <View style={styles.guestIconCircle}>
+            <Text style={styles.guestIcon}>{'\uD83D\uDC64'}</Text>
           </View>
+          <Text style={styles.guestTitle}>Welcome to WeddingEase</Text>
+          <Text style={styles.guestBody}>
+            Sign in or create a free account to save your preferences, book
+            consultations, track orders, and access your personal wedding hub.
+          </Text>
+          <TouchableOpacity
+            style={[styles.signInBtn, { backgroundColor: accent }]}
+            onPress={() => router.push('/auth/login')}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Sign In"
+            testID="profile-sign-in-btn"
+          >
+            <Text style={styles.signInBtnText}>Sign In</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.registerBtn}
+            onPress={() => router.push('/auth/register')}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Create Account"
+            testID="profile-register-btn"
+          >
+            <Text style={[styles.registerBtnText, { color: accent }]}>
+              Create Free Account
+            </Text>
+          </TouchableOpacity>
+
+          {/* Explore packages */}
+          <TouchableOpacity
+            style={styles.exploreLink}
+            onPress={() => router.push('/screens/packages/list')}
+            activeOpacity={0.7}
+            accessibilityRole="link"
+          >
+            <Text style={styles.exploreLinkText}>Explore Premium Packages</Text>
+          </TouchableOpacity>
         </View>
+      </AppShell>
+    );
+  }
 
-        {/* Details */}
-        <View style={styles.section}>
-          <Row label="Phone" value={profile?.phone ?? '—'} textColor={theme.text} />
-          <Row label="Wedding Date" value={profile?.weddingDate ?? '—'} textColor={theme.text} />
-          <Row label="Role" value={profile?.weddingRole ?? '—'} textColor={theme.text} />
-        </View>
-
-        {/* Edit Profile */}
-        <TouchableOpacity
-          testID="edit-profile-button"
-          style={[styles.editBtn, { borderColor: theme.primary }]}
-          onPress={() => router.push('/edit-profile')}
-          accessibilityRole="button"
-          accessibilityLabel="Edit Profile"
-        >
-          <Text style={[styles.editBtnText, { color: theme.primary }]}>Edit Profile</Text>
-        </TouchableOpacity>
-
-        {/* Sign Out */}
-        <TouchableOpacity
-          testID="sign-out-button"
-          style={[styles.signOutBtn, loading && styles.btnDisabled]}
-          onPress={handleSignOut}
-          disabled={loading}
-          accessibilityRole="button"
-          accessibilityLabel="Sign Out"
-        >
-          {loading ? (
-            <ActivityIndicator color={Colors.error} />
-          ) : (
-            <Text style={styles.signOutText}>Sign Out</Text>
-          )}
-        </TouchableOpacity>
+  // ── Logged-in state ────────────────────────────────────────────────────────
+  return (
+    <AppShell header={<ScreenHeader title="Profile" />}>
+      {/* Avatar section */}
+      <View style={styles.avatarSection}>
+        {profile?.photoURL ? (
+          <Image
+            source={{ uri: profile.photoURL }}
+            style={[styles.avatar, { borderColor: accent }]}
+          />
+        ) : (
+          <View style={[styles.avatarPlaceholder, { backgroundColor: accent }]}>
+            <Text style={styles.avatarInitial}>
+              {profile?.name?.charAt(0).toUpperCase() ?? '?'}
+            </Text>
+          </View>
+        )}
+        <Text style={styles.name}>{profile?.name ?? '--'}</Text>
+        <Text style={styles.email}>{profile?.email ?? '--'}</Text>
+        <RoleBadge style={{ marginTop: 8 }} />
       </View>
-    </SafeAreaView>
+
+      {/* Upgrade prompt for free users */}
+      {showUpgradePrompts && (
+        <UpgradePrompt
+          title="Upgrade to Premium"
+          subtitle="Unlock EaseBot, unlimited chat, dedicated stylist, and more."
+          onPress={() => router.push('/screens/packages/list')}
+          style={{ marginBottom: 16 }}
+          testID="profile-upgrade-prompt"
+        />
+      )}
+
+      {/* Profile details */}
+      <View style={styles.detailsCard}>
+        <DetailRow label="Phone" value={profile?.phone ?? '--'} />
+        <DetailRow label="Wedding Date" value={profile?.weddingDate ?? '--'} />
+        <DetailRow label="Role" value={profile?.weddingRole ?? '--'} />
+      </View>
+
+      {/* Edit Profile */}
+      <TouchableOpacity
+        style={[styles.editBtn, { borderColor: accent }]}
+        onPress={() => router.push('/edit-profile')}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Edit Profile"
+        testID="edit-profile-button"
+      >
+        <Text style={[styles.editBtnText, { color: accent }]}>Edit Profile</Text>
+      </TouchableOpacity>
+
+      {/* Menu items */}
+      <View style={styles.menuSection}>
+        <MenuItem
+          label="My Orders"
+          onPress={() => router.push('/orders')}
+          testID="profile-orders"
+        />
+        <MenuItem
+          label="Packages"
+          onPress={() => router.push('/screens/packages/list')}
+          testID="profile-packages"
+        />
+        <MenuItem
+          label="About WeddingEase"
+          onPress={() => router.push('/screens/brand')}
+          testID="profile-about"
+        />
+      </View>
+
+      {/* Sign Out */}
+      <TouchableOpacity
+        style={[styles.signOutBtn, loading && styles.btnDisabled]}
+        onPress={handleSignOut}
+        disabled={loading}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Sign Out"
+        testID="sign-out-button"
+      >
+        {loading ? (
+          <ActivityIndicator color={T.rose} />
+        ) : (
+          <Text style={styles.signOutText}>Sign Out</Text>
+        )}
+      </TouchableOpacity>
+
+      <View style={{ height: 24 }} />
+    </AppShell>
   );
 }
 
-function Row({
-  label,
-  value,
-  textColor,
-}: {
-  label: string;
-  value: string;
-  textColor: string;
-}) {
+function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <View style={rowStyles.container}>
-      <Text style={rowStyles.label}>{label}</Text>
-      <Text style={[rowStyles.value, { color: textColor }]}>{value}</Text>
+    <View style={styles.detailRow}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={styles.detailValue}>{value}</Text>
     </View>
   );
 }
 
-const rowStyles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.premium.borderLight,
-  },
-  label: { ...Typography.body2, color: Colors.premium.textMuted },
-  value: { ...Typography.body2, fontWeight: '500' },
-});
+function MenuItem({
+  label,
+  onPress,
+  testID,
+}: {
+  label: string;
+  onPress: () => void;
+  testID?: string;
+}) {
+  return (
+    <TouchableOpacity
+      style={styles.menuItem}
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      testID={testID}
+    >
+      <Text style={styles.menuLabel}>{label}</Text>
+      <Text style={styles.menuArrow}>{'\u203A'}</Text>
+    </TouchableOpacity>
+  );
+}
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  container: { flex: 1, padding: Spacing.lg },
-  avatarSection: { alignItems: 'center', marginBottom: Spacing.xl },
+  // Guest state
+  guestContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  guestIconCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: T.s2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  guestIcon: {
+    fontSize: 40,
+  },
+  guestTitle: {
+    fontSize: 22,
+    fontFamily: F.serif,
+    fontWeight: '700',
+    color: T.heading,
+    textAlign: 'center',
+  },
+  guestBody: {
+    fontSize: 14,
+    fontFamily: F.sans,
+    color: T.body,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginTop: 10,
+    marginBottom: 28,
+  },
+  signInBtn: {
+    width: '100%',
+    minHeight: 52,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    ...SHADOW.card,
+  },
+  signInBtnText: {
+    fontSize: 16,
+    fontFamily: F.sans,
+    fontWeight: '600',
+    color: T.white,
+  },
+  registerBtn: {
+    width: '100%',
+    minHeight: 48,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    borderColor: T.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginTop: 10,
+  },
+  registerBtnText: {
+    fontSize: 15,
+    fontFamily: F.sans,
+    fontWeight: '600',
+  },
+  exploreLink: {
+    marginTop: 24,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  exploreLinkText: {
+    fontSize: 14,
+    fontFamily: F.sans,
+    fontWeight: '500',
+    color: T.gold,
+    textDecorationLine: 'underline',
+  },
+
+  // Avatar section
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingTop: 8,
+  },
   avatar: {
     width: 88,
     height: 88,
     borderRadius: 44,
     borderWidth: 3,
-    marginBottom: Spacing.sm,
+    marginBottom: 10,
   },
   avatarPlaceholder: {
     width: 88,
     height: 88,
     borderRadius: 44,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    justifyContent: 'center',
+    marginBottom: 10,
   },
-  avatarInitial: { fontSize: 36, fontWeight: '700', color: '#fff' },
-  name: { ...Typography.h3, marginBottom: Spacing.xs },
-  email: { ...Typography.body2, marginBottom: Spacing.sm },
-  badge: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.full,
+  avatarInitial: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: T.white,
   },
-  badgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  section: {
-    backgroundColor: Colors.premium.surfaceWarm,
-    borderRadius: BorderRadius.lg,
+  name: {
+    fontSize: 20,
+    fontFamily: F.serif,
+    fontWeight: '700',
+    color: T.heading,
+    marginBottom: 2,
+  },
+  email: {
+    fontSize: 14,
+    fontFamily: F.sans,
+    color: T.body,
+  },
+
+  // Details
+  detailsCard: {
+    backgroundColor: T.cardBg,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: Colors.premium.border,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
+    borderColor: T.border,
+    padding: 16,
+    marginBottom: 14,
+    ...SHADOW.card,
   },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: T.borderLight,
+  },
+  detailLabel: {
+    fontSize: 13,
+    fontFamily: F.sans,
+    color: T.dim,
+  },
+  detailValue: {
+    fontSize: 14,
+    fontFamily: F.sans,
+    fontWeight: '500',
+    color: T.heading,
+  },
+
+  // Edit
   editBtn: {
-    height: 48,
+    minHeight: 48,
     borderWidth: 1.5,
-    borderRadius: BorderRadius.md,
-    justifyContent: 'center',
+    borderRadius: RADIUS.md,
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    justifyContent: 'center',
+    marginBottom: 14,
   },
-  editBtnText: { fontSize: 15, fontWeight: '600' },
+  editBtnText: {
+    fontSize: 15,
+    fontFamily: F.sans,
+    fontWeight: '600',
+  },
+
+  // Menu
+  menuSection: {
+    backgroundColor: T.cardBg,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: T.border,
+    overflow: 'hidden',
+    marginBottom: 14,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    minHeight: 48,
+    borderBottomWidth: 1,
+    borderBottomColor: T.borderLight,
+  },
+  menuLabel: {
+    fontSize: 14,
+    fontFamily: F.sans,
+    fontWeight: '500',
+    color: T.heading,
+  },
+  menuArrow: {
+    fontSize: 20,
+    color: T.dim,
+  },
+
+  // Sign out
   signOutBtn: {
-    height: 52,
+    minHeight: 52,
     borderWidth: 1.5,
-    borderColor: Colors.error,
-    borderRadius: BorderRadius.md,
-    justifyContent: 'center',
+    borderColor: T.rose,
+    borderRadius: RADIUS.md,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  btnDisabled: { opacity: 0.6 },
-  signOutText: { color: Colors.error, fontSize: 16, fontWeight: '600' },
+  btnDisabled: {
+    opacity: 0.6,
+  },
+  signOutText: {
+    fontSize: 16,
+    fontFamily: F.sans,
+    fontWeight: '600',
+    color: T.rose,
+  },
 });

@@ -11,12 +11,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useCartStore } from '../store/cartStore';
-import { useAuthStore } from '../store/authStore';
+import { useAccess } from '../hooks/useAccess';
 import { api } from '../lib/api';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { DeliveryOptions, type DeliveryType } from '../components/order/DeliveryOptions';
-import { Colors } from '../theme/colors';
+import { T, SHADOW } from '../constants/tokens';
 import { Typography } from '../theme/typography';
 import { Spacing } from '../theme/spacing';
 
@@ -35,10 +35,8 @@ const INSURANCE_EXTRA = 199;
 
 export default function CheckoutScreen() {
   const router = useRouter();
-  const { role } = useAuthStore();
+  const { accent } = useAccess();
   const { items, getTotal, clearCart } = useCartStore();
-
-  const theme = Colors[role === 'stylist' ? 'stylist' : 'client'];
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -140,11 +138,11 @@ export default function CheckoutScreen() {
     <View style={styles.stepIndicator}>
       {STEPS.map((s, i) => (
         <React.Fragment key={s}>
-          <View style={[styles.stepDot, i <= step && { backgroundColor: theme.primary }]}>
-            <Text style={[styles.stepDotText, i <= step && { color: '#fff' }]}>{i + 1}</Text>
+          <View style={[styles.stepDot, i <= step && { backgroundColor: accent }]}>
+            <Text style={[styles.stepDotText, i <= step && { color: T.white }]}>{i + 1}</Text>
           </View>
           {i < STEPS.length - 1 && (
-            <View style={[styles.stepLine, i < step && { backgroundColor: theme.primary }]} />
+            <View style={[styles.stepLine, i < step && { backgroundColor: accent }]} />
           )}
         </React.Fragment>
       ))}
@@ -152,15 +150,15 @@ export default function CheckoutScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[Typography.h3, { color: theme.text }]}>Checkout</Text>
-          <Text style={[Typography.body2, { color: Colors.premium.textMuted }]}>
+          <Text style={[Typography.h3, { color: T.heading }]}>Checkout</Text>
+          <Text style={[Typography.body2, { color: T.textMuted }]}>
             Step {step + 1} of 3 — {STEPS[step]}
           </Text>
         </View>
@@ -182,7 +180,7 @@ export default function CheckoutScreen() {
                 value={address.name}
                 onChangeText={t => setAddress(p => ({ ...p, name: t }))}
                 error={addrErrors.name}
-                color={theme.primary}
+                color={accent}
               />
               <Input
                 testID="address-phone"
@@ -191,7 +189,7 @@ export default function CheckoutScreen() {
                 value={address.phone}
                 onChangeText={t => setAddress(p => ({ ...p, phone: t }))}
                 error={addrErrors.phone}
-                color={theme.primary}
+                color={accent}
               />
               <Input
                 testID="address-line1"
@@ -199,7 +197,7 @@ export default function CheckoutScreen() {
                 value={address.line1}
                 onChangeText={t => setAddress(p => ({ ...p, line1: t }))}
                 error={addrErrors.line1}
-                color={theme.primary}
+                color={accent}
               />
               <Input
                 testID="address-city"
@@ -207,7 +205,7 @@ export default function CheckoutScreen() {
                 value={address.city}
                 onChangeText={t => setAddress(p => ({ ...p, city: t }))}
                 error={addrErrors.city}
-                color={theme.primary}
+                color={accent}
               />
               <Input
                 testID="address-state"
@@ -215,7 +213,7 @@ export default function CheckoutScreen() {
                 value={address.state}
                 onChangeText={t => setAddress(p => ({ ...p, state: t }))}
                 error={addrErrors.state}
-                color={theme.primary}
+                color={accent}
               />
               <Input
                 testID="address-pin"
@@ -225,7 +223,7 @@ export default function CheckoutScreen() {
                 value={address.pin}
                 onChangeText={t => setAddress(p => ({ ...p, pin: t }))}
                 error={addrErrors.pin}
-                color={theme.primary}
+                color={accent}
               />
             </View>
           )}
@@ -262,7 +260,7 @@ export default function CheckoutScreen() {
                     value={coupon}
                     onChangeText={setCoupon}
                     autoCapitalize="characters"
-                    color={theme.primary}
+                    color={accent}
                   />
                 </View>
                 <Button
@@ -271,7 +269,7 @@ export default function CheckoutScreen() {
                   onPress={handleApplyCoupon}
                   loading={couponLoading}
                   variant="outline"
-                  color={theme.primary}
+                  color={accent}
                   style={styles.couponBtn}
                 />
               </View>
@@ -289,7 +287,7 @@ export default function CheckoutScreen() {
                 )}
                 <View style={styles.totalRow}>
                   <Text style={[Typography.body1, { fontWeight: '700' }]}>Total</Text>
-                  <Text style={[Typography.h3, { color: theme.primary }]}>
+                  <Text style={[Typography.h3, { color: accent }]}>
                     ₹{total.toLocaleString()}
                   </Text>
                 </View>
@@ -306,7 +304,7 @@ export default function CheckoutScreen() {
               title="Back"
               onPress={() => setStep(s => s - 1)}
               variant="outline"
-              color={theme.primary}
+              color={accent}
               style={{ flex: 1 }}
               disabled={loading}
             />
@@ -316,7 +314,7 @@ export default function CheckoutScreen() {
             title={step === 2 ? 'Place Order' : 'Continue'}
             onPress={step === 2 ? handlePlaceOrder : handleNext}
             loading={loading}
-            color={theme.primary}
+            color={accent}
             size="lg"
             style={{ flex: 1 }}
           />
@@ -337,11 +335,11 @@ function SummaryRow({
 }) {
   return (
     <View style={summaryRowStyles.row}>
-      <Text style={[Typography.body2, { color: Colors.premium.textSecondary }]}>{label}</Text>
+      <Text style={[Typography.body2, { color: T.textSecondary }]}>{label}</Text>
       <Text
         style={[
           Typography.body2,
-          { fontWeight: '600', color: highlight ? Colors.success : Colors.premium.text },
+          { fontWeight: '600', color: highlight ? T.success : T.textPrimary },
         ]}
       >
         {value}
@@ -375,23 +373,23 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.premium.borderLight,
+    backgroundColor: T.borderLight,
     borderWidth: 1,
-    borderColor: Colors.premium.border,
+    borderColor: T.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  stepDotText: { fontSize: 14, fontWeight: '700', color: Colors.premium.textMuted },
-  stepLine: { flex: 1, height: 2, backgroundColor: Colors.premium.border },
+  stepDotText: { fontSize: 14, fontWeight: '700', color: T.textMuted },
+  stepLine: { flex: 1, height: 2, backgroundColor: T.border },
   content: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xl },
-  sectionTitle: { ...Typography.h3, marginBottom: Spacing.md, color: Colors.premium.text },
+  sectionTitle: { ...Typography.h3, marginBottom: Spacing.md, color: T.textPrimary },
   couponRow: { flexDirection: 'row', gap: Spacing.sm, alignItems: 'flex-start' },
   couponBtn: { marginTop: 22 },
   summaryCard: {
-    backgroundColor: Colors.premium.surfaceWarm,
+    backgroundColor: T.surfaceWarm,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.premium.border,
+    borderColor: T.border,
     padding: Spacing.md,
     marginTop: Spacing.md,
   },
@@ -402,19 +400,15 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: Colors.premium.border,
+    borderTopColor: T.border,
   },
   footer: {
     flexDirection: 'row',
     gap: Spacing.md,
     padding: Spacing.lg,
-    backgroundColor: Colors.premium.surface,
+    backgroundColor: T.surface,
     borderTopWidth: 1,
-    borderTopColor: Colors.premium.border,
-    shadowColor: Colors.premium.shadow,
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    borderTopColor: T.border,
+    ...SHADOW.card,
   },
 });

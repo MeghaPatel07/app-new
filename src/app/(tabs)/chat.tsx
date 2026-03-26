@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   FlatList,
@@ -20,22 +20,27 @@ import { useAccess } from '../../hooks/useAccess';
 import { ChatInput } from '../../components/chat/ChatInput';
 import { MessageBubble, type Message } from '../../components/chat/MessageBubble';
 import { TrialLimitBanner } from '../../components/chat/TrialLimitBanner';
-import { Colors } from '../../theme/colors';
-import { Typography } from '../../theme/typography';
-import { Spacing, BorderRadius } from '../../theme/spacing';
+import { Icon } from '../../components/primitives/Icon';
+import { Button } from '../../components/ui/Button';
+import { T, F, RADIUS, SHADOW } from '../../constants/tokens';
 
+/**
+ * Chat tab screen.
+ * Free trial: TrialChatBanner + 10-message counter.
+ * Premium: Unlimited chat with stylist.
+ * Uses useAccess() for all role-based rendering.
+ */
 export default function ChatTab() {
   const router = useRouter();
   const { user, profile } = useAuthStore();
-  const { isGuest, isFree, isPremium, isStylist } = useAccess();
+  const { isGuest, isFree, isPremium, isStylist, accent, hasUnlimitedChat, showUpgradePrompts } = useAccess();
 
-  // Chat session is keyed to the user's UID
+  // Chat session keyed to user UID
   const chatId = user?.uid ?? '';
   const { messages, trialMeta, isLoading, sendMessage } = useChat(chatId);
 
-  // ── Trial logic — derived from server-side trialChatMeta ──────────────────
-  // Premium users and stylists have no limit at all; skip all trial checks.
-  const skipTrialCheck = isPremium || isStylist;
+  // Trial logic -- derived from server-side trialChatMeta
+  const skipTrialCheck = hasUnlimitedChat || isStylist;
   const isLimited = !skipTrialCheck && (trialMeta?.limitReached ?? false);
   const remaining = skipTrialCheck
     ? Infinity
@@ -45,63 +50,59 @@ export default function ChatTab() {
   const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
   const listRef = useRef<FlatList>(null);
 
-  // Show upgrade modal automatically when limit is first reached
+  // Show upgrade modal when limit first reached
   const prevLimited = useRef(false);
   if (isLimited && !prevLimited.current) {
     prevLimited.current = true;
-    // Use setTimeout to avoid setState-during-render warning
     setTimeout(() => setUpgradeModalVisible(true), 0);
   }
   if (!isLimited) prevLimited.current = false;
 
-  // ── Guest gate ─────────────────────────────────────────────────────────────
+  // Guest gate
   if (isGuest) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
         <View style={styles.center}>
-          <Text style={[Typography.h3, { color: Colors.premium.textSecondary, textAlign: 'center' }]}>
+          <Icon name="chat" size={48} color={T.muted} />
+          <Text style={styles.gateTitle}>
             Sign in to chat with your stylist
           </Text>
-          <TouchableOpacity
-            testID="chat-sign-in-button"
-            style={[styles.actionBtn, { borderColor: Colors.guest.primary }]}
+          <Text style={styles.gateBody}>
+            Get personalised styling advice from a dedicated WeddingEase stylist.
+          </Text>
+          <Button
+            title="Sign In"
             onPress={() => router.push('/auth/login')}
-          >
-            <Text style={{ color: Colors.guest.primary, fontWeight: '600', fontSize: 15 }}>
-              Sign In
-            </Text>
-          </TouchableOpacity>
+            variant="outline"
+            testID="chat-sign-in-button"
+          />
         </View>
       </SafeAreaView>
     );
   }
 
-  // ── No stylist assigned ────────────────────────────────────────────────────
+  // No stylist assigned state
   if (!profile?.stylistId) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: Colors.premium.background }]}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
         <View style={styles.center}>
-          <Text style={[Typography.h3, { color: Colors.premium.textSecondary, textAlign: 'center' }]}>
-            Chat with your stylist
-          </Text>
-          <Text style={[Typography.body1, { color: Colors.premium.textMuted, textAlign: 'center', marginTop: Spacing.sm }]}>
+          <Icon name="chat" size={48} color={T.muted} />
+          <Text style={styles.gateTitle}>Chat with your stylist</Text>
+          <Text style={styles.gateBody}>
             A stylist will be assigned after you purchase a package.
           </Text>
-          <TouchableOpacity
-            testID="chat-get-package-button"
-            style={[styles.actionBtn, { borderColor: Colors.client.primary }]}
+          <Button
+            title="View Packages"
             onPress={() => router.push('/packages')}
-          >
-            <Text style={{ color: Colors.client.primary, fontWeight: '600' }}>
-              View Packages
-            </Text>
-          </TouchableOpacity>
+            variant="outline"
+            testID="chat-get-package-button"
+          />
         </View>
       </SafeAreaView>
     );
   }
 
-  // ── Send text ──────────────────────────────────────────────────────────────
+  // Send text
   const handleSendText = async (text: string) => {
     if (isLimited) {
       setUpgradeModalVisible(true);
@@ -110,7 +111,7 @@ export default function ChatTab() {
     await sendMessage({ type: 'text', text });
   };
 
-  // ── Send audio — upload to Firebase Storage then send 'audio' message ─────
+  // Send audio
   const handleSendAudio = async (uri: string, duration: number) => {
     if (isLimited) {
       setUpgradeModalVisible(true);
@@ -129,8 +130,8 @@ export default function ChatTab() {
     }
   };
 
-  // ── Map Firestore messages → MessageBubble format ─────────────────────────
-  const bubbleMessages: Message[] = messages.map(m => ({
+  // Map Firestore messages to MessageBubble format
+  const bubbleMessages: Message[] = messages.map((m) => ({
     id: m.id,
     type: m.type,
     text: m.text,
@@ -140,21 +141,20 @@ export default function ChatTab() {
     readReceipt: m.readBy && m.readBy.length > 1 ? 'read' : 'delivered',
   }));
 
-  const role = isPremium ? 'premium' : 'client';
-  const primaryColor = isPremium ? Colors.premium.primary : Colors.client.primary;
+  const roleLabel = isPremium ? 'premium' : 'client';
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.premium.background }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        {/* ── Header ─────────────────────────────────────────────────────── */}
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={[Typography.h3, { color: Colors.client.text }]}>Chat</Text>
+          <Text style={styles.headerTitle}>Chat</Text>
           {isPremium && (
-            <View style={styles.premiumBadge}>
+            <View style={[styles.premiumBadge, { backgroundColor: accent }]}>
               <Text style={styles.premiumBadgeText}>Premium</Text>
             </View>
           )}
@@ -165,38 +165,7 @@ export default function ChatTab() {
           )}
         </View>
 
-        {/* ── Message list ────────────────────────────────────────────────── */}
-        {isLoading ? (
-          <View style={styles.center}>
-            <ActivityIndicator color={primaryColor} />
-          </View>
-        ) : (
-          <FlatList
-            ref={listRef}
-            data={bubbleMessages}
-            keyExtractor={m => m.id}
-            contentContainerStyle={styles.messageList}
-            inverted
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <MessageBubble
-                testID={`msg-${item.id}`}
-                message={item}
-                role={role}
-                onProductPress={id => router.push(`/product/${id}` as any)}
-              />
-            )}
-            ListEmptyComponent={
-              <View style={styles.emptyChat}>
-                <Text style={{ color: Colors.premium.textMuted, textAlign: 'center' }}>
-                  No messages yet. Say hi!
-                </Text>
-              </View>
-            }
-          />
-        )}
-
-        {/* ── Trial limit banner (remaining <= 3, non-premium) ────────────── */}
+        {/* Trial banner -- shown when remaining <= 3 for free users */}
         {showBanner && (
           <TrialLimitBanner
             testID="trial-limit-banner"
@@ -206,17 +175,48 @@ export default function ChatTab() {
           />
         )}
 
-        {/* ── Chat input ──────────────────────────────────────────────────── */}
+        {/* Message list */}
+        {isLoading ? (
+          <View style={styles.center}>
+            <ActivityIndicator color={accent} />
+          </View>
+        ) : (
+          <FlatList
+            ref={listRef}
+            data={bubbleMessages}
+            keyExtractor={(m) => m.id}
+            contentContainerStyle={styles.messageList}
+            inverted
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <MessageBubble
+                testID={`msg-${item.id}`}
+                message={item}
+                role={roleLabel}
+                onProductPress={(id) => router.push(`/product/${id}` as any)}
+              />
+            )}
+            ListEmptyComponent={
+              <View style={styles.emptyChat}>
+                <Text style={styles.emptyChatText}>
+                  No messages yet. Say hi!
+                </Text>
+              </View>
+            }
+          />
+        )}
+
+        {/* Chat input -- disabled when limit reached */}
         <ChatInput
           testID="chat-input"
           onSendText={handleSendText}
           onSendAudio={handleSendAudio}
           disabled={isLimited}
-          role={role}
+          role={roleLabel}
         />
       </KeyboardAvoidingView>
 
-      {/* ── Upgrade modal (shown when limit reached) ─────────────────────── */}
+      {/* Upgrade modal (shown when limit reached) */}
       <Modal
         visible={upgradeModalVisible}
         transparent
@@ -225,29 +225,29 @@ export default function ChatTab() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox} testID="upgrade-modal">
-            <Text style={[Typography.h3, { textAlign: 'center', marginBottom: Spacing.sm }]}>
+            <Text style={styles.modalTitle}>
               You've reached your 10-message limit
             </Text>
-            <Text style={[Typography.body1, { color: Colors.premium.textSecondary, textAlign: 'center', marginBottom: Spacing.lg }]}>
+            <Text style={styles.modalBody}>
               Upgrade to WeddingEase Premium to continue chatting with your stylist.
             </Text>
             <View style={styles.modalActions}>
-              <TouchableOpacity
-                testID="upgrade-modal-packages-btn"
-                style={[styles.modalPrimaryBtn, { backgroundColor: Colors.client.primary }]}
+              <Button
+                title="View Packages"
                 onPress={() => {
                   setUpgradeModalVisible(false);
                   router.push('/packages');
                 }}
-              >
-                <Text style={{ color: '#FFF', fontWeight: '600' }}>View Packages</Text>
-              </TouchableOpacity>
+                variant="primary"
+                fullWidth
+                testID="upgrade-modal-packages-btn"
+              />
               <TouchableOpacity
                 testID="upgrade-modal-dismiss-btn"
-                style={styles.modalSecondaryBtn}
+                style={styles.modalDismissBtn}
                 onPress={() => setUpgradeModalVisible(false)}
               >
-                <Text style={{ color: Colors.premium.textSecondary }}>Not Now</Text>
+                <Text style={styles.modalDismissText}>Not Now</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -259,41 +259,73 @@ export default function ChatTab() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+    gap: 12,
+  },
+  gateTitle: {
+    fontSize: 18,
+    fontFamily: F.serif,
+    fontWeight: '600',
+    color: T.heading,
+    textAlign: 'center',
+  },
+  gateBody: {
+    fontSize: 14,
+    fontFamily: F.sans,
+    color: T.body,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 8,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.premium.border,
-    backgroundColor: Colors.premium.surface,
+    borderBottomColor: T.border,
+    backgroundColor: T.cardBg,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontFamily: F.serif,
+    fontWeight: '600',
+    color: T.heading,
   },
   premiumBadge: {
-    backgroundColor: Colors.premium?.primary ?? '#7C3AED',
-    borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.sm,
+    borderRadius: RADIUS.full,
+    paddingHorizontal: 10,
     paddingVertical: 2,
   },
   premiumBadgeText: {
-    color: '#FFF',
+    color: T.white,
     fontSize: 11,
+    fontFamily: F.sans,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   trialRemaining: {
-    color: Colors.premium.textMuted,
+    color: T.dim,
     fontSize: 12,
+    fontFamily: F.sans,
   },
-  messageList: { padding: Spacing.md, paddingBottom: Spacing.lg },
-  emptyChat: { padding: Spacing.xl },
-  actionBtn: {
-    marginTop: Spacing.lg,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.sm,
-    borderWidth: 1.5,
-    borderRadius: 8,
+  messageList: {
+    padding: 16,
+    paddingBottom: 24,
+  },
+  emptyChat: {
+    padding: 32,
+  },
+  emptyChatText: {
+    color: T.dim,
+    fontSize: 14,
+    fontFamily: F.sans,
+    textAlign: 'center',
   },
   // Modal
   modalOverlay: {
@@ -301,32 +333,45 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Spacing.xl,
+    padding: 32,
   },
   modalBox: {
-    backgroundColor: Colors.premium.surface,
-    borderRadius: BorderRadius.lg,
+    backgroundColor: T.cardBg,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: Colors.premium.border,
-    padding: Spacing.xl,
+    borderColor: T.border,
+    padding: 24,
     width: '100%',
     maxWidth: 360,
-    shadowColor: Colors.premium.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 8,
+    ...SHADOW.elevated,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: F.serif,
+    fontWeight: '600',
+    color: T.heading,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalBody: {
+    fontSize: 14,
+    fontFamily: F.sans,
+    color: T.body,
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 22,
   },
   modalActions: {
-    gap: Spacing.sm,
+    gap: 8,
   },
-  modalPrimaryBtn: {
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.sm,
+  modalDismissBtn: {
+    minHeight: 44,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  modalSecondaryBtn: {
-    paddingVertical: Spacing.sm,
-    alignItems: 'center',
+  modalDismissText: {
+    fontSize: 14,
+    fontFamily: F.sans,
+    color: T.body,
   },
 });

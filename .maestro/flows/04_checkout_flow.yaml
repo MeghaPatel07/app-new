@@ -1,4 +1,4 @@
-appId: com.weddingease.app
+appId: weddingease.serviceapp
 name: "Checkout - 3-Step Flow"
 ---
 - launchApp

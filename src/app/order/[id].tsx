@@ -11,21 +11,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useOrder } from '../../hooks/useOrder';
-import { useAuthStore } from '../../store/authStore';
+import { useAccess } from '../../hooks/useAccess';
 import { api } from '../../lib/api';
 import { StatusTimeline, type OrderStatus } from '../../components/order/StatusTimeline';
 import { Button } from '../../components/ui/Button';
-import { Colors } from '../../theme/colors';
+import { T } from '../../constants/tokens';
 import { Typography } from '../../theme/typography';
 import { Spacing, BorderRadius } from '../../theme/spacing';
 
 export default function OrderTrackingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { role } = useAuthStore();
+  const { role, accent } = useAccess();
   const { order, isLoading, error } = useOrder(id!);
-
-  const theme = Colors[role === 'stylist' ? 'stylist' : 'client'];
 
   const handleCancelOrder = () => {
     Alert.alert('Cancel Order', 'Are you sure you want to cancel this order?', [
@@ -78,7 +76,7 @@ export default function OrderTrackingScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={theme.primary} />
+          <ActivityIndicator size="large" color={accent} />
         </View>
       </SafeAreaView>
     );
@@ -88,7 +86,7 @@ export default function OrderTrackingScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <Text style={{ color: Colors.error }}>Order not found.</Text>
+          <Text style={{ color: T.rose }}>Order not found.</Text>
         </View>
       </SafeAreaView>
     );
@@ -99,19 +97,19 @@ export default function OrderTrackingScreen() {
   const canReturn = status === 'delivered';
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity testID="back-button" onPress={() => router.back()}>
-            <Text style={{ color: theme.primary, fontWeight: '600' }}>← Back</Text>
+            <Text style={{ color: accent, fontWeight: '600' }}>← Back</Text>
           </TouchableOpacity>
-          <Text style={[Typography.h3, { color: theme.text }]}>Order Tracking</Text>
+          <Text style={[Typography.h3, { color: T.heading }]}>Order Tracking</Text>
           <View style={{ width: 48 }} />
         </View>
 
         {/* Order meta */}
-        <View style={[styles.metaCard, { borderColor: theme.primary + '33' }]}>
+        <View style={[styles.metaCard, { borderColor: accent + '33' }]}>
           <View style={styles.metaRow}>
             <Text style={styles.metaLabel}>Order ID</Text>
             <Text style={styles.metaValue}>#{order.id.slice(-8).toUpperCase()}</Text>
@@ -122,7 +120,7 @@ export default function OrderTrackingScreen() {
           </View>
           <View style={styles.metaRow}>
             <Text style={styles.metaLabel}>Total</Text>
-            <Text style={[styles.metaValue, { color: theme.primary, fontWeight: '700' }]}>
+            <Text style={[styles.metaValue, { color: accent, fontWeight: '700' }]}>
               ₹{order.total?.toLocaleString() ?? '—'}
             </Text>
           </View>
@@ -133,13 +131,13 @@ export default function OrderTrackingScreen() {
         </View>
 
         {/* Status timeline — real-time Firestore listener via useOrder */}
-        <Text style={[Typography.h3, { color: theme.text, marginBottom: Spacing.md }]}>
+        <Text style={[Typography.h3, { color: T.heading, marginBottom: Spacing.md }]}>
           Status
         </Text>
         <StatusTimeline
           testID="order-status-timeline"
           currentStatus={status}
-          role={role === 'stylist' ? 'stylist' : 'client'}
+          role={role}
         />
 
         {/* Actions */}
@@ -150,7 +148,7 @@ export default function OrderTrackingScreen() {
               title="Cancel Order"
               onPress={handleCancelOrder}
               variant="outline"
-              color={Colors.error}
+              color={T.error}
               size="lg"
             />
           )}
@@ -160,7 +158,7 @@ export default function OrderTrackingScreen() {
               title="Return Order"
               onPress={handleReturnOrder}
               variant="outline"
-              color={Colors.warning}
+              color={T.warning}
               size="lg"
             />
           )}
@@ -169,7 +167,7 @@ export default function OrderTrackingScreen() {
             title="All Orders"
             onPress={() => router.push('/orders')}
             variant="ghost"
-            color={theme.primary}
+            color={accent}
           />
         </View>
       </ScrollView>
@@ -192,14 +190,14 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     marginBottom: Spacing.xl,
-    backgroundColor: Colors.gray50,
+    backgroundColor: T.gray50,
   },
   metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: Spacing.xs,
   },
-  metaLabel: { ...Typography.body2, color: Colors.gray500 },
-  metaValue: { ...Typography.body2, color: Colors.gray900 },
+  metaLabel: { ...Typography.body2, color: T.gray500 },
+  metaValue: { ...Typography.body2, color: T.gray900 },
   actions: { marginTop: Spacing.xl, gap: Spacing.sm },
 });

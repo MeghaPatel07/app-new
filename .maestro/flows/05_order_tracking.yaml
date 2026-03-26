@@ -1,4 +1,4 @@
-appId: com.weddingease.app
+appId: weddingease.serviceapp
 name: "Order Tracking - Status Timeline"
 ---
 - launchApp

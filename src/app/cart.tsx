@@ -10,19 +10,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useCartStore } from '../store/cartStore';
-import { useAuthStore } from '../store/authStore';
+import { useAccess } from '../hooks/useAccess';
 import { CartItem, type CartLineKey } from '../components/product/CartItem';
 import { Button } from '../components/ui/Button';
-import { Colors } from '../theme/colors';
+import { T, SHADOW } from '../constants/tokens';
 import { Typography } from '../theme/typography';
 import { Spacing } from '../theme/spacing';
 
 export default function CartScreen() {
   const router = useRouter();
-  const { role } = useAuthStore();
+  const { role, accent } = useAccess();
   const { items, updateQty, removeItem, clearCart, getTotal } = useCartStore();
-
-  const theme = Colors[role === 'stylist' ? 'stylist' : 'client'];
 
   // Match by productId + size + color — same logic as cartStore's lineKey()
   const findItem = ({ productId, size, color }: CartLineKey) =>
@@ -61,16 +59,16 @@ export default function CartScreen() {
   const total = getTotal();
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: T.bg }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity testID="back-button" onPress={() => router.back()}>
-          <Text style={{ color: theme.primary, fontSize: 16, fontWeight: '600' }}>← Back</Text>
+          <Text style={{ color: accent, fontSize: 16, fontWeight: '600' }}>← Back</Text>
         </TouchableOpacity>
-        <Text style={[Typography.h3, { color: theme.text }]}>Your Cart</Text>
+        <Text style={[Typography.h3, { color: T.heading }]}>Your Cart</Text>
         {items.length > 0 ? (
           <TouchableOpacity testID="clear-cart-button" onPress={handleClearCart}>
-            <Text style={{ color: Colors.error, fontSize: 14 }}>Clear</Text>
+            <Text style={{ color: T.rose, fontSize: 14 }}>Clear</Text>
           </TouchableOpacity>
         ) : (
           <View style={{ width: 48 }} />
@@ -80,12 +78,12 @@ export default function CartScreen() {
       {items.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>🛍</Text>
-          <Text style={[Typography.h3, { color: Colors.premium.textSecondary }]}>Your cart is empty</Text>
+          <Text style={[Typography.h3, { color: T.textSecondary }]}>Your cart is empty</Text>
           <Button
             testID="continue-shopping-button"
             title="Continue Shopping"
             onPress={() => router.push('/(tabs)/shop')}
-            color={theme.primary}
+            color={accent}
             style={{ marginTop: Spacing.lg }}
           />
         </View>
@@ -93,7 +91,7 @@ export default function CartScreen() {
         <>
           <Text
             testID="cart-item-count"
-            style={{ paddingHorizontal: Spacing.lg, color: Colors.premium.textMuted, marginBottom: Spacing.xs }}
+            style={{ paddingHorizontal: Spacing.lg, color: T.textMuted, marginBottom: Spacing.xs }}
           >
             {items.length} {items.length === 1 ? 'item' : 'items'}
           </Text>
@@ -115,7 +113,7 @@ export default function CartScreen() {
                 onIncrement={handleIncrement}
                 onDecrement={handleDecrement}
                 onRemove={handleRemove}
-                role={role === 'stylist' ? 'stylist' : 'client'}
+                role={role}
               />
             )}
           />
@@ -123,8 +121,8 @@ export default function CartScreen() {
           {/* Summary footer */}
           <View style={styles.footer}>
             <View style={styles.totalRow}>
-              <Text style={[Typography.body1, { color: Colors.premium.textSecondary }]}>Total</Text>
-              <Text style={[Typography.h3, { color: theme.primary }]}>
+              <Text style={[Typography.body1, { color: T.textSecondary }]}>Total</Text>
+              <Text style={[Typography.h3, { color: accent }]}>
                 ₹{total.toLocaleString()}
               </Text>
             </View>
@@ -132,7 +130,7 @@ export default function CartScreen() {
               testID="checkout-button"
               title="Proceed to Checkout"
               onPress={() => router.push('/checkout')}
-              color={theme.primary}
+              color={accent}
               size="lg"
             />
           </View>
@@ -150,9 +148,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.premium.surface,
+    backgroundColor: T.surface,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.premium.border,
+    borderBottomColor: T.border,
   },
   emptyContainer: {
     flex: 1,
@@ -165,14 +163,10 @@ const styles = StyleSheet.create({
   footer: {
     padding: Spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: Colors.premium.border,
-    backgroundColor: Colors.premium.surface,
+    borderTopColor: T.border,
+    backgroundColor: T.surface,
     gap: Spacing.md,
-    shadowColor: Colors.premium.shadow,
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    ...SHADOW.card,
   },
   totalRow: {
     flexDirection: 'row',

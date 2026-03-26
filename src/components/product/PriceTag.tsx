@@ -1,12 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Typography, Spacing } from '../../theme';
-import type { RoleTheme } from '../../theme';
+import { T } from '../../constants/tokens';
+import { ROLE_ACCENT } from '../../constants/roles';
+import type { UserRole } from '../../constants/roles';
+import { Typography } from '../../theme/typography';
+import { Spacing } from '../../theme/spacing';
 
 interface PriceTagProps {
   price: number;
   originalPrice?: number;
-  role?: RoleTheme;
+  role?: UserRole;
   size?: 'sm' | 'md' | 'lg';
   testID?: string;
 }
@@ -14,11 +17,11 @@ interface PriceTagProps {
 export const PriceTag: React.FC<PriceTagProps> = ({
   price,
   originalPrice,
-  role = 'client',
+  role = 'free',
   size = 'md',
   testID,
 }) => {
-  const primaryColor = Colors[role].primary;
+  const primaryColor = ROLE_ACCENT[role];
   const discount = originalPrice && originalPrice > price
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : null;
@@ -39,7 +42,7 @@ export const PriceTag: React.FC<PriceTagProps> = ({
       ) : null}
       {discount ? (
         <View style={styles.discountBadge}>
-          <Text style={[Typography.caption, { color: '#FFF', fontWeight: '700' }]}>
+          <Text style={[Typography.caption, { color: T.white, fontWeight: '700' }]}>
             {discount}% OFF
           </Text>
         </View>
@@ -50,9 +53,9 @@ export const PriceTag: React.FC<PriceTagProps> = ({
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  original: { color: Colors.gray400, textDecorationLine: 'line-through' },
+  original: { color: T.gray400, textDecorationLine: 'line-through' },
   discountBadge: {
-    backgroundColor: Colors.success,
+    backgroundColor: T.success,
     borderRadius: 3,
     paddingHorizontal: 4,
     paddingVertical: 1,

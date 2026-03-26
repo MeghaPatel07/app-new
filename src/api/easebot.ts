@@ -1,6 +1,5 @@
+import { api } from '../lib/api';
 import { getIdToken } from '../firebase/auth';
-
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL ?? 'http://localhost:3000/api/v1';
 
 export async function sendEaseBotMessage(
   conversationId: string,
@@ -10,7 +9,8 @@ export async function sendEaseBotMessage(
   onError: (err: Error) => void
 ): Promise<void> {
   const token = await getIdToken();
-  const response = await fetch(`${BACKEND_URL}/easebot/chat`, {
+  const baseURL = api.defaults.baseURL || 'http://localhost:5000/api';
+  const response = await fetch(`${baseURL}/ai/easebot`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

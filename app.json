@@ -15,12 +15,13 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.weddingease.app",
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "bundleIdentifier": "weddingease.serviceapp",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "associatedDomains": ["applinks:weddingease.app"]
     },
     "android": {
       "jsEngine": "hermes",
-      "package": "com.weddingease.app",
+      "package": "weddingease.serviceapp",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -28,7 +29,24 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "weddingease"
+            },
+            {
+              "scheme": "https",
+              "host": "*.weddingease.app",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

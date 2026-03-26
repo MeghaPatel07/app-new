@@ -1,9 +1,8 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
-import { useAuthStore } from '../../store/authStore';
 import { useAccess } from '../../hooks/useAccess';
-import { Colors } from '../../theme/colors';
+import { T } from '../../constants/tokens';
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   return (
@@ -14,29 +13,20 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
 }
 
 export default function TabsLayout() {
-  const { role } = useAuthStore();
-  const { isPremium } = useAccess();
-
-  const isStylist = role === 'stylist';
-
-  const activeColor = isStylist
-    ? Colors.stylist.primary
-    : isPremium
-    ? Colors.premium.primary
-    : Colors.client.primary;
+  const { accent, isStylist } = useAccess();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: activeColor,
-        tabBarInactiveTintColor: Colors.premium.textMuted,
+        tabBarActiveTintColor: accent,
+        tabBarInactiveTintColor: T.textMuted,
         tabBarStyle: {
-          backgroundColor: Colors.premium.surface,
-          borderTopColor: Colors.premium.border,
+          backgroundColor: T.surface,
+          borderTopColor: T.border,
           borderTopWidth: 1,
           elevation: 0,
-          shadowColor: Colors.premium.shadow,
+          shadowColor: T.gold,
           shadowOpacity: 0.08,
           shadowOffset: { width: 0, height: -2 },
           shadowRadius: 8,

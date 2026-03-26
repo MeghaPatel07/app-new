@@ -6,8 +6,9 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
-import type { RoleTheme } from '../../theme';
+import { T, SHADOW, RADIUS } from '../../constants/tokens';
+import { Typography, Spacing } from '../../theme';
+import { ROLE_ACCENT, type UserRole } from '../../constants/roles';
 
 export interface CartLineKey {
   productId: string;
@@ -26,7 +27,7 @@ interface CartItemProps {
   onIncrement: (key: CartLineKey) => void;
   onDecrement: (key: CartLineKey) => void;
   onRemove:   (key: CartLineKey) => void;
-  role?: RoleTheme;
+  role?: UserRole;
   testID?: string;
 }
 
@@ -41,10 +42,10 @@ export const CartItem: React.FC<CartItemProps> = ({
   onIncrement,
   onDecrement,
   onRemove,
-  role = 'client',
+  role = 'free',
   testID,
 }) => {
-  const primaryColor = Colors[role].primary;
+  const primaryColor = ROLE_ACCENT[role];
   const lineKey: CartLineKey = { productId: id, size: size ?? '', color: color ?? '' };
 
   return (
@@ -55,12 +56,12 @@ export const CartItem: React.FC<CartItemProps> = ({
       }
 
       <View style={styles.details}>
-        <Text style={[Typography.body2, { fontWeight: '600', color: Colors.gray900 }]} numberOfLines={2}>
+        <Text style={[Typography.body2, { fontWeight: '600', color: T.ink }]} numberOfLines={2}>
           {name}
         </Text>
         {(size || color) && (
-          <Text style={[Typography.caption, { color: Colors.gray500 }]}>
-            {[size && `Size: ${size}`, color && `Color: ${color}`].filter(Boolean).join(' · ')}
+          <Text style={[Typography.caption, { color: T.dim }]}>
+            {[size && `Size: ${size}`, color && `Color: ${color}`].filter(Boolean).join(' \u00B7 ')}
           </Text>
         )}
 
@@ -72,7 +73,7 @@ export const CartItem: React.FC<CartItemProps> = ({
               onPress={() => onDecrement(lineKey)}
               style={[styles.stepBtn, { borderColor: primaryColor }]}
             >
-              <Text style={[Typography.button, { color: primaryColor }]}>−</Text>
+              <Text style={[Typography.button, { color: primaryColor }]}>{'\u2212'}</Text>
             </TouchableOpacity>
             <Text style={[Typography.body2, { fontWeight: '600', minWidth: 24, textAlign: 'center' }]}>
               {quantity}
@@ -87,7 +88,7 @@ export const CartItem: React.FC<CartItemProps> = ({
           </View>
 
           <Text style={[Typography.body2, { fontWeight: '700', color: primaryColor }]}>
-            ₹{(price * quantity).toLocaleString()}
+            {'\u20B9'}{(price * quantity).toLocaleString()}
           </Text>
         </View>
       </View>
@@ -98,7 +99,7 @@ export const CartItem: React.FC<CartItemProps> = ({
         onPress={() => onRemove(lineKey)}
         style={styles.removeBtn}
       >
-        <Text style={{ color: Colors.gray400, fontSize: 18 }}>✕</Text>
+        <Text style={{ color: T.muted, fontSize: 18 }}>{'\u2715'}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -107,26 +108,22 @@ export const CartItem: React.FC<CartItemProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#FFF',
-    borderRadius: BorderRadius.lg,
+    backgroundColor: T.cardBg,
+    borderRadius: RADIUS.lg,
     padding: Spacing.sm,
     marginVertical: Spacing.xs,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    ...SHADOW.card,
     gap: Spacing.sm,
   },
-  image: { width: 80, height: 100, borderRadius: BorderRadius.md, backgroundColor: Colors.gray100 },
-  imagePlaceholder: { backgroundColor: Colors.gray200 },
+  image: { width: 80, height: 100, borderRadius: RADIUS.md, backgroundColor: T.s3 },
+  imagePlaceholder: { backgroundColor: T.s2 },
   details: { flex: 1, justifyContent: 'space-between' },
   bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: Spacing.xs },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   stepBtn: {
     width: 28,
     height: 28,
-    borderRadius: BorderRadius.sm,
+    borderRadius: RADIUS.sm,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',

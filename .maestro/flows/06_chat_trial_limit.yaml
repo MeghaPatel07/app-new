@@ -1,4 +1,4 @@
-appId: com.weddingease.app
+appId: weddingease.serviceapp
 name: "Chat - Trial Limit (10 messages)"
 ---
 - launchApp

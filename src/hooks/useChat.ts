@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   collection,
   doc,
@@ -13,25 +13,9 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuthStore } from '../store/authStore';
+import type { ChatMessage, TrialMeta } from '../types';
 
-export interface ChatMessage {
-  id: string;
-  senderId: string;
-  text?: string;
-  imageUrl?: string;
-  audioUrl?: string;
-  type: 'text' | 'image' | 'audio' | 'product';
-  readBy: string[];
-  createdAt: any;
-}
-
-export interface TrialMeta {
-  chatId: string;
-  clientId: string;
-  messageCount: number;   // 0–10
-  limitReached: boolean;
-  updatedAt: any;
-}
+export type { ChatMessage, TrialMeta };
 
 export function useChat(chatId: string) {
   const { user } = useAuthStore();
@@ -93,5 +77,16 @@ export function useChat(chatId: string) {
     });
   }, [chatId, user]);
 
-  return { messages, trialMeta, isLoading, sendMessage };
+  // ── Convenience getters for messagesUsed / limitReached ───────────────────
+  const messagesUsed = useMemo(() => trialMeta?.messageCount ?? 0, [trialMeta]);
+  const limitReached = useMemo(() => trialMeta?.limitReached ?? false, [trialMeta]);
+
+  return {
+    messages,
+    trialMeta,
+    isLoading,
+    sendMessage,
+    messagesUsed,
+    limitReached,
+  };
 }

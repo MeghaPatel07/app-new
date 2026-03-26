@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getIdToken } from '../firebase/auth';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:3000/api/v1';
+const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:5000/api';
 
 export const api = axios.create({
   baseURL: BASE_URL,

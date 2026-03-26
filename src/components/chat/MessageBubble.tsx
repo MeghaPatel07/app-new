@@ -8,8 +8,9 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Audio } from 'expo-av';
-import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
-import type { RoleTheme } from '../../theme';
+import { T, RADIUS } from '../../constants/tokens';
+import { Typography, Spacing } from '../../theme';
+import { ROLE_ACCENT, type UserRole } from '../../constants/roles';
 
 export type MessageType = 'text' | 'image' | 'audio' | 'product';
 
@@ -33,7 +34,7 @@ export interface Message {
 
 interface MessageBubbleProps {
   message: Message;
-  role?: RoleTheme;
+  role?: UserRole;
   onProductPress?: (productId: string) => void;
   onAudioPress?: (audioUri: string) => void;
   audioUri?: string;    // direct audioUri prop for audio playback (overrides message.audioUri)
@@ -41,35 +42,30 @@ interface MessageBubbleProps {
 }
 
 // ---------------------------------------------------------------------------
-// ReadReceipt — visually distinct indicators for sent / delivered / read
-//   sent:      single gray tick   ✓
-//   delivered: double gray ticks  ✓✓  (both gray, same weight)
-//   read:      double colored ticks ✓✓  (accent color, bold)
+// ReadReceipt
 // ---------------------------------------------------------------------------
 const ReadReceipt: React.FC<{ status: 'sent' | 'delivered' | 'read'; accentColor: string }> = ({
   status,
   accentColor,
 }) => {
   if (status === 'sent') {
-    // Single gray tick
     return (
-      <Text style={[styles.receiptText, { color: Colors.gray400 }]}>✓</Text>
+      <Text style={[styles.receiptText, { color: T.muted }]}>{'\u2713'}</Text>
     );
   }
   if (status === 'delivered') {
-    // Double gray ticks — normal weight, gray
     return (
       <View style={styles.receiptRow}>
-        <Text style={[styles.receiptText, { color: Colors.gray400 }]}>✓</Text>
-        <Text style={[styles.receiptText, styles.receiptSecondTick, { color: Colors.gray400 }]}>✓</Text>
+        <Text style={[styles.receiptText, { color: T.muted }]}>{'\u2713'}</Text>
+        <Text style={[styles.receiptText, styles.receiptSecondTick, { color: T.muted }]}>{'\u2713'}</Text>
       </View>
     );
   }
-  // read — double ticks in accent color, bold, with a subtle filled background pill
+  // read
   return (
     <View style={[styles.receiptRow, styles.receiptReadPill, { backgroundColor: accentColor + '22' }]}>
-      <Text style={[styles.receiptText, styles.receiptReadTick, { color: accentColor }]}>✓</Text>
-      <Text style={[styles.receiptText, styles.receiptSecondTick, styles.receiptReadTick, { color: accentColor }]}>✓</Text>
+      <Text style={[styles.receiptText, styles.receiptReadTick, { color: accentColor }]}>{'\u2713'}</Text>
+      <Text style={[styles.receiptText, styles.receiptSecondTick, styles.receiptReadTick, { color: accentColor }]}>{'\u2713'}</Text>
     </View>
   );
 };
@@ -82,7 +78,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   audioUri: audioUriProp,
   testID,
 }) => {
-  const primaryColor = Colors[role].primary;
+  const primaryColor = ROLE_ACCENT[role];
   const { isSent, type, readReceipt } = message;
 
   // Resolve audio URI: prefer direct prop, fall back to message field
@@ -93,7 +89,6 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
 
   const handleAudioPress = async () => {
-    // Always notify parent if callback provided
     if (resolvedAudioUri) {
       onAudioPress?.(resolvedAudioUri);
     }
@@ -142,7 +137,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       >
         {/* TEXT */}
         {type === 'text' && message.text ? (
-          <Text style={[Typography.body2, { color: isSent ? '#FFF' : Colors.gray900 }]}>
+          <Text style={[Typography.body2, { color: isSent ? T.white : T.ink }]}>
             {message.text}
           </Text>
         ) : null}
@@ -152,17 +147,17 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <Image source={{ uri: message.imageUrl }} style={styles.imageContent} resizeMode="cover" />
         ) : null}
 
-        {/* AUDIO — expo-av internal playback */}
+        {/* AUDIO */}
         {type === 'audio' && resolvedAudioUri ? (
           <TouchableOpacity
             style={styles.audioRow}
             onPress={handleAudioPress}
             testID="audio-play-button"
           >
-            <Text style={{ fontSize: 20 }}>{isPlaying ? '⏹' : '▶'}</Text>
-            <View style={[styles.audioBar, { backgroundColor: isSent ? 'rgba(255,255,255,0.5)' : Colors.gray400 }]} />
+            <Text style={{ fontSize: 20 }}>{isPlaying ? '\u23F9' : '\u25B6'}</Text>
+            <View style={[styles.audioBar, { backgroundColor: isSent ? 'rgba(255,255,255,0.5)' : T.muted }]} />
             {message.audioDuration != null && (
-              <Text style={[Typography.caption, { color: isSent ? '#FFF' : Colors.gray600 }]}>
+              <Text style={[Typography.caption, { color: isSent ? T.white : T.body }]}>
                 {Math.floor(message.audioDuration / 60)}:{String(message.audioDuration % 60).padStart(2, '0')}
               </Text>
             )}
@@ -179,11 +174,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
               <Image source={{ uri: message.product.imageUrl }} style={styles.productImage} resizeMode="cover" />
             ) : null}
             <View style={styles.productInfo}>
-              <Text style={[Typography.body2, { fontWeight: '600', color: Colors.gray900 }]} numberOfLines={2}>
+              <Text style={[Typography.body2, { fontWeight: '600', color: T.ink }]} numberOfLines={2}>
                 {message.product.name}
               </Text>
               <Text style={[Typography.caption, { color: primaryColor, fontWeight: '600' }]}>
-                ₹{message.product.price.toLocaleString()}
+                {'\u20B9'}{message.product.price.toLocaleString()}
               </Text>
             </View>
           </TouchableOpacity>
@@ -192,7 +187,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         {/* Timestamp + read receipt */}
         <View style={styles.meta}>
           {message.timestamp ? (
-            <Text style={[Typography.caption, { color: isSent ? 'rgba(255,255,255,0.7)' : Colors.gray500 }]}>
+            <Text style={[Typography.caption, { color: isSent ? 'rgba(255,255,255,0.7)' : T.dim }]}>
               {message.timestamp}
             </Text>
           ) : null}
@@ -211,27 +206,24 @@ const styles = StyleSheet.create({
   row:              { flexDirection: 'row', marginVertical: 3, paddingHorizontal: Spacing.md },
   rowSent:          { justifyContent: 'flex-end' },
   rowReceived:      { justifyContent: 'flex-start' },
-  bubble:           { maxWidth: '75%', borderRadius: BorderRadius.lg, padding: Spacing.sm, overflow: 'hidden' },
+  bubble:           { maxWidth: '75%', borderRadius: RADIUS.lg, padding: Spacing.sm, overflow: 'hidden' },
   bubbleSent:       { borderBottomRightRadius: 2 },
-  bubbleReceived:   { backgroundColor: Colors.gray200, borderBottomLeftRadius: 2 },
-  imageContent:     { width: 200, height: 150, borderRadius: BorderRadius.md },
+  bubbleReceived:   { backgroundColor: T.s2, borderBottomLeftRadius: 2 },
+  imageContent:     { width: 200, height: 150, borderRadius: RADIUS.md },
   audioRow:         { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, minWidth: 140 },
   audioBar:         { flex: 1, height: 2, borderRadius: 1 },
-  productCard:      { flexDirection: 'row', backgroundColor: '#FFF', borderRadius: BorderRadius.md, overflow: 'hidden', width: 220 },
+  productCard:      { flexDirection: 'row', backgroundColor: T.cardBg, borderRadius: RADIUS.md, overflow: 'hidden', width: 220 },
   productImage:     { width: 70, height: 70 },
   productInfo:      { flex: 1, padding: Spacing.xs, justifyContent: 'center' },
   meta:             { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 2 },
 
   // Read receipt styles
-  // sent:      single ✓  gray
-  // delivered: double ✓✓  gray (normal weight)
-  // read:      double ✓✓  accent color, bold, inside a tinted pill
   receiptRow:       { flexDirection: 'row', alignItems: 'center' },
   receiptText:      { fontSize: 11, lineHeight: 14 },
-  receiptSecondTick:{ marginLeft: -3 },        // tight overlap for the second tick
+  receiptSecondTick:{ marginLeft: -3 },
   receiptReadTick:  { fontWeight: '700' as const },
   receiptReadPill:  {
-    borderRadius: BorderRadius.full,
+    borderRadius: RADIUS.full,
     paddingHorizontal: 4,
     paddingVertical: 1,
   },
