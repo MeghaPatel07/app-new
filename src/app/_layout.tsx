@@ -3,6 +3,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ActivityIndicator, View } from 'react-native';
 import { doc, getDoc } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../hooks/useAuth';
 import { useNotifications } from '../hooks/useNotifications';
 import { useAuthStore } from '../store/authStore';
@@ -32,15 +33,43 @@ function AuthGuard() {
     const inStylistTabs  = segments[0] === '(stylist-tabs)';
     const inProtectedRoute = (PROTECTED_SEGMENTS as readonly string[]).includes(segments[0] as string);
 
-    if (!user && inProtectedRoute) {
+    // Guests are allowed to browse shop, packages, and brand screens without logging in.
+    // Only orders, consult, session, profile, style-board, and stylist routes require auth.
+    const GUEST_OK_SUBSCREENS = ['shop', 'packages', 'brand'];
+    const isGuestOkScreen =
+      segments[0] === 'screens' &&
+      GUEST_OK_SUBSCREENS.includes(segments[1] as string);
+
+    if (!user && inProtectedRoute && !isGuestOkScreen) {
       // Send to login when trying to access auth-only screens
       router.replace('/auth/login');
       return;
     }
 
     if (user && inAuthGroup) {
-      // Authenticated user sitting on auth screens — route to their home tab group
-      checkStylistAndRoute(user.uid);
+      // Check for a pending package purchase saved before login
+      AsyncStorage.getItem('weddingease_pending_package').then(async (pending) => {
+        if (pending) {
+          await AsyncStorage.removeItem('weddingease_pending_package');
+          const { packageId, packageName, price, isAddon } = JSON.parse(pending) as {
+            packageId: string;
+            packageName: string;
+            price: number;
+            isAddon?: boolean;
+          };
+          router.replace({
+            pathname: '/screens/packages/checkout',
+            params: {
+              packageId,
+              packageName,
+              price: String(price),
+              isAddon: isAddon ? 'true' : 'false',
+            },
+          });
+          return;
+        }
+        checkStylistAndRoute(user.uid);
+      });
       return;
     }
 
@@ -126,6 +155,8 @@ function AuthGuard() {
       <Stack.Screen name="screens/packages/list" />
       <Stack.Screen name="screens/packages/detail" />
       <Stack.Screen name="screens/packages/addon-detail" />
+      <Stack.Screen name="screens/packages/checkout" />
+      <Stack.Screen name="screens/packages/confirmation" />
 
       {/* Profile */}
       <Stack.Screen name="screens/profile/edit" />

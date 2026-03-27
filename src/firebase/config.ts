@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { initializeAuth, getAuth, inMemoryPersistence } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
+import { getFunctions } from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? 'AIzaSyD3f6VSZooeyqt_8PXJveislOH7Mrn6X94',
@@ -22,5 +23,6 @@ export const firebaseAuth = isFirstInit
   ? initializeAuth(app, { persistence: inMemoryPersistence })
   : getAuth(app);
 export const firebaseStorage = getStorage(app);
+export const firebaseFunctions = getFunctions(app, 'us-central1');
 export const FIREBASE_PROJECT_ID = firebaseConfig.projectId;
 export { firebaseConfig };

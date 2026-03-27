@@ -191,6 +191,35 @@ export interface AddOn {
   additionalPrice: number;
 }
 
+// ── Package Purchase Record ────────────────────────────────────────────────────
+export interface PackagePurchaseRecord {
+  docId?: string;
+  uid: string;
+  userName: string;
+  userEmail: string;
+  userPhone: string;
+  packageName: string;
+  packagePrice: number;
+  description: string;
+  validity: number;
+  points: PackagePoint[];
+  remainingPoints: PackagePoint[];
+  isActive: boolean;
+  isPaid: boolean;
+  paidAmount: number;
+  totalAmount: number;
+  orderId: string;
+  transactionId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  quantity: number;
+  isAddon: boolean;
+  totalConsultationHours: number;
+  usedConsultationHours: number;
+  createdAt: Date | string | number;
+  purchaseAt?: Date | string | number;
+}
+
 // ── StyleBoard ───────────────────────────────────────────────────────────────
 export interface StyleBoard {
   id: string;

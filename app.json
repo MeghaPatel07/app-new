@@ -17,7 +17,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "weddingease.serviceapp",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "associatedDomains": ["applinks:weddingease.app"]
+      "associatedDomains": [
+        "applinks:weddingease.app"
+      ]
     },
     "android": {
       "jsEngine": "hermes",
@@ -44,7 +46,10 @@
               "pathPrefix": "/"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -54,7 +59,8 @@
     "plugins": [
       "expo-router",
       "expo-notifications",
-      "expo-web-browser"
+      "expo-web-browser",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": false

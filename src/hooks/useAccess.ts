@@ -22,7 +22,7 @@ export type AccessFlags = {
   canEaseBot:         boolean;    // premium + stylist
   canViewStyleBoard:  boolean;    // premium only
   canShop:            boolean;    // everyone
-  canWishlist:        boolean;    // free + premium (not guest)
+  canWishlist:        boolean;    // everyone — guests use AsyncStorage, logged-in users sync to Firestore
   canViewOrders:      boolean;    // free + premium (not guest)
   showUpgradePrompts: boolean;    // free only — gentle package CTAs
   showLockIcons:      boolean;    // free only — lock on EaseBot etc.
@@ -55,7 +55,7 @@ export const useAccess = (): AccessFlags => {
     canEaseBot:         isPremium || isStylist,
     canViewStyleBoard:  isPremium,
     canShop:            true,
-    canWishlist:        !isGuest,
+    canWishlist:        true,         // guests use AsyncStorage; login only needed to sync
     canViewOrders:      !isGuest,
     showUpgradePrompts: isFree,
     showLockIcons:      isFree,

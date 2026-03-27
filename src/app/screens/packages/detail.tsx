@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AppShell } from '../../../components/layout/AppShell';
 import { ScreenHeader } from '../../../components/layout/ScreenHeader';
@@ -103,15 +104,30 @@ export default function PackageDetailScreen() {
 
   const pkg = PACKAGE_DATA[packageId ?? ''] ?? PACKAGE_DATA.elegant;
 
-  const handlePurchase = () => {
+  const displayName = pkg.name;
+  const displayPrice = pkg.price;
+
+  const handlePurchase = async () => {
     if (isGuest) {
+      await AsyncStorage.setItem(
+        'weddingease_pending_package',
+        JSON.stringify({
+          packageId: pkg?.id ?? packageId,
+          packageName: displayName,
+          price: displayPrice,
+        }),
+      );
       router.push('/auth/login');
       return;
     }
-    // Navigate to checkout or payment
     router.push({
-      pathname: '/screens/shop/checkout',
-      params: { packageId: pkg.id, type: 'package' },
+      pathname: '/screens/packages/checkout',
+      params: {
+        packageId: pkg?.id ?? packageId,
+        packageName: displayName,
+        price: String(displayPrice),
+        isAddon: 'false',
+      },
     });
   };
 

@@ -245,17 +245,17 @@ function groupVariantsByType(variants: VariantModelClass[]): VariantGroup[] {
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { accent, canWishlist } = useAccess();
+  const { accent } = useAccess();
 
   // Cart
   const addItem     = useCartStore(s => s.addItem);
   const cartItems   = useCartStore(s => s.items);
 
-  // Wishlist
-  const uid            = useAuthStore(s => s.user?.uid ?? null);
-  const isInWishlist   = useWishlistStore(s => s.isInWishlist);
+  // Wishlist — selector must call isInWishlist(id) INSIDE the selector fn so Zustand
+  // tracks the boolean result and re-renders this component when favourites changes.
+  const uid          = useAuthStore(s => s.user?.uid ?? null);
+  const isWishlisted = useWishlistStore(s => s.isInWishlist(id!));
   const toggleWishlist = useWishlistStore(s => s.toggleWishlist);
-  const isWishlisted   = isInWishlist(id!);
 
   // Product data
   const { data: product, isLoading, error } = useProduct(id!);
@@ -328,18 +328,15 @@ export default function ProductDetailScreen() {
   }, [product, displayPrice]);
 
   const handleWishlist = useCallback(() => {
-    if (!canWishlist) {
-      Alert.alert('Sign in required', 'Please sign in to save items to your wishlist.');
-      return;
-    }
     if (!product) return;
+    // uid is null for guests — wishlistStore handles guest mode via AsyncStorage
     toggleWishlist(id!, uid, {
       name:          product.name,
       image:         allImages[0] ?? '',
       price:         selectedVariant?.variantPrice ?? product.price ?? 0,
       originalPrice: product.originalPrice,
     });
-  }, [canWishlist, toggleWishlist, product, id, uid, allImages, selectedVariant]);
+  }, [toggleWishlist, product, id, uid, allImages, selectedVariant]);
 
   const buildCartItem = useCallback(() => {
     if (!product) return null;
@@ -350,7 +347,8 @@ export default function ProductDetailScreen() {
       qty,
       size:      '',
       color:     '',
-      price:     product.price ?? 0,
+      // Use variant price when selected; product.price is the discounted/sale price
+      price:     selectedVariant?.variantPrice ?? product.price ?? 0,
       image:     allImages[0] ?? '',
     };
   }, [product, qty, allImages]);

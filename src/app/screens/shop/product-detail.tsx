@@ -16,15 +16,23 @@ import { T, F, RADIUS, SHADOW } from '../../../constants/tokens';
 import { useAccess } from '../../../hooks/useAccess';
 import { useProduct } from '../../../hooks/useProducts';
 import { useCartStore } from '../../../store/cartStore';
+import { useWishlistStore } from '../../../store/wishlistStore';
+import { useAuthStore } from '../../../store/authStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ProductDetailScreen() {
   const router = useRouter();
   const { productId } = useLocalSearchParams<{ productId: string }>();
-  const { role, canShop } = useAccess();
+  const { canShop } = useAccess();
   const { data: product, isLoading, isError } = useProduct(productId ?? '');
   const addItem = useCartStore((s) => s.addItem);
+
+  // Wishlist — call isInWishlist(productId) INSIDE the selector so Zustand tracks
+  // the boolean result and re-renders when favourites changes.
+  const uid = useAuthStore((s) => s.user?.uid ?? null);
+  const wishlisted = useWishlistStore((s) => s.isInWishlist(productId ?? ''));
+  const toggleWishlist = useWishlistStore((s) => s.toggleWishlist);
 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -52,6 +60,13 @@ export default function ProductDetailScreen() {
     );
   }
 
+  // product.price is the sale/discounted price; product.originalPrice is the MRP (if set)
+  const hasDiscount =
+    product.originalPrice != null && product.originalPrice > product.price;
+  const discountPct = hasDiscount
+    ? Math.round(((product.originalPrice! - product.price) / product.originalPrice!) * 100)
+    : 0;
+
   const handleAddToCart = () => {
     if (!selectedSize && product.sizes.length > 0) {
       Alert.alert('Select Size', 'Please choose a size before adding to cart.');
@@ -62,6 +77,7 @@ export default function ProductDetailScreen() {
       return;
     }
 
+    // product.price is already the discounted/sale price
     addItem({
       productId: product.id,
       name: product.name,
@@ -78,6 +94,16 @@ export default function ProductDetailScreen() {
     ]);
   };
 
+  const handleWishlist = () => {
+    // uid is null for guests — wishlistStore stores guest items in AsyncStorage
+    toggleWishlist(productId!, uid, {
+      name: product.name,
+      image: product.images?.[0] ?? '',
+      price: product.price,
+      originalPrice: product.originalPrice,
+    });
+  };
+
   return (
     <AppShell
       header={
@@ -85,14 +111,31 @@ export default function ProductDetailScreen() {
           title="Product Detail"
           onBack={() => router.back()}
           right={
-            <TouchableOpacity
-              onPress={() => router.push('/screens/shop/cart')}
-              style={styles.cartBtn}
-              accessibilityRole="button"
-              accessibilityLabel="View cart"
-            >
-              <Text style={{ fontSize: 20 }}>{'\uD83D\uDED2'}</Text>
-            </TouchableOpacity>
+            <View style={styles.headerRight}>
+              {/* Wishlist toggle — works for guests and logged-in users */}
+              <TouchableOpacity
+                onPress={handleWishlist}
+                style={styles.headerIconBtn}
+                accessibilityRole="button"
+                accessibilityLabel={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                testID="product-wishlist-btn"
+              >
+                <Text style={[styles.headerIcon, wishlisted && styles.heartActive]}>
+                  {wishlisted ? '\u2665' : '\u2661'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Cart */}
+              <TouchableOpacity
+                onPress={() => router.push('/screens/shop/cart')}
+                style={styles.headerIconBtn}
+                accessibilityRole="button"
+                accessibilityLabel="View cart"
+                testID="product-cart-btn"
+              >
+                <Text style={styles.headerIcon}>{'\uD83D\uDED2'}</Text>
+              </TouchableOpacity>
+            </View>
           }
         />
       }
@@ -108,7 +151,7 @@ export default function ProductDetailScreen() {
             setActiveImageIdx(idx);
           }}
         >
-          {(product.images?.length > 0 ? product.images : [null]).map((uri, idx) => (
+          {(product.images?.length > 0 ? product.images : [null]).map((uri: string | null, idx: number) => (
             <View key={idx} style={styles.imageSlide}>
               {uri ? (
                 <Image source={{ uri }} style={styles.productImage} resizeMode="cover" />
@@ -138,10 +181,21 @@ export default function ProductDetailScreen() {
         <Text style={styles.category}>{product.category.toUpperCase()}</Text>
         <Text style={styles.productName}>{product.name}</Text>
 
+        {/* Price row — shows discount if available */}
         <View style={styles.priceRow}>
           <Text style={styles.price}>
             {'\u20B9'}{product.price.toLocaleString('en-IN')}
           </Text>
+          {hasDiscount && (
+            <>
+              <Text style={styles.originalPrice}>
+                {'\u20B9'}{product.originalPrice!.toLocaleString('en-IN')}
+              </Text>
+              <View style={styles.discountBadge}>
+                <Text style={styles.discountText}>{discountPct}% OFF</Text>
+              </View>
+            </>
+          )}
           {product.rating ? (
             <View style={styles.ratingBadge}>
               <Text style={styles.ratingText}>{product.rating.toFixed(1)} / 5</Text>
@@ -288,6 +342,24 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  headerIconBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerIcon: {
+    fontSize: 20,
+    color: T.heading,
+  },
+  heartActive: {
+    color: T.rose,
+  },
   imageSection: {
     marginHorizontal: -16,
     marginBottom: 20,
@@ -348,14 +420,35 @@ const styles = StyleSheet.create({
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     marginTop: 8,
-    gap: 12,
+    gap: 8,
   },
   price: {
     fontSize: 22,
     fontFamily: F.sans,
     fontWeight: '800',
     color: T.accent,
+  },
+  originalPrice: {
+    fontSize: 15,
+    fontFamily: F.sans,
+    color: T.muted,
+    textDecorationLine: 'line-through',
+  },
+  discountBadge: {
+    backgroundColor: T.sageBg,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: T.sage + '44',
+  },
+  discountText: {
+    fontSize: 11,
+    fontFamily: F.sans,
+    fontWeight: '700',
+    color: T.sage,
   },
   ratingBadge: {
     backgroundColor: T.goldBg,
@@ -471,11 +564,5 @@ const styles = StyleSheet.create({
     fontFamily: F.sans,
     fontWeight: '700',
     color: T.white,
-  },
-  cartBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
